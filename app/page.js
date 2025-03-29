@@ -5,6 +5,10 @@ import ImageDropzone from './components/ImageDropzone';
 import SortableImageGrid from './components/SortableImageGrid';
 import JSZip from 'jszip';
 import './globals.css';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import Link from 'next/link';
+import uploadService from './services/uploadService';
 
 export default function Home() {
   const [images, setImages] = useState([]);
@@ -14,6 +18,10 @@ export default function Home() {
   const [isDownloading, setIsDownloading] = useState(false);
   const gridRef = useRef(null);
   const [renamedImages, setRenamedImages] = useState([]);
+  const imageDropzoneRef = useRef(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadResults, setUploadResults] = useState({});
+  const [hasConfig, setHasConfig] = useState(false);
 
   // 接收选中图片的回调
   const handleSelectedImagesChange = useCallback((selectedIds) => {
@@ -316,7 +324,7 @@ export default function Home() {
   }, [renamedImages]);
 
   // 下载特定组的重命名图片
-  const downloadGroupImages = useCallback(async (groupImages, groupPrefix) => {
+  const downloadGroupImages = useCallback(async (groupImages) => {
     if (!groupImages || groupImages.length === 0) return;
     
     setIsDownloading(true);
@@ -366,7 +374,7 @@ export default function Home() {
       const href = URL.createObjectURL(zipBlob);
       const link = document.createElement('a');
       link.href = href;
-      link.download = `${groupPrefix || 'images'}_group.zip`;
+      link.download = `${prefix || 'images'}_group.zip`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -377,7 +385,7 @@ export default function Home() {
     } finally {
       setIsDownloading(false);
     }
-  }, []);
+  }, [prefix]);
 
   // 组件卸载时清理所有预览URL
   useEffect(() => {
@@ -401,11 +409,11 @@ export default function Home() {
       const isLink = e.target.tagName === 'A';
       
       // 如果不是按钮、输入框、图片或链接，则可以触发文件选择
-    //   if (!isButton && !isInput && !isImage && !isLink) {
-        // if (window.imageDropzoneRef) {
-        //   window.imageDropzoneRef.openFileDialog();
-        // }
-    //   }
+      if (!isButton && !isInput && !isImage && !isLink) {
+        if (imageDropzoneRef.current) {
+          imageDropzoneRef.current.openFileDialog();
+        }
+      }
     };
     
     // 为main元素添加双击事件
@@ -420,177 +428,299 @@ export default function Home() {
     };
   }, []);
 
+  // 检查是否有有效的上传配置
+  useEffect(() => {
+    try {
+      const config = localStorage.getItem('imageUploaderConfig');
+      if (config) {
+        const parsedConfig = JSON.parse(config);
+        const selectedService = parsedConfig.selectedService;
+        
+        if (
+          (selectedService === 'github' && 
+           parsedConfig.github && 
+           parsedConfig.github.token && 
+           parsedConfig.github.repo && 
+           parsedConfig.github.owner) ||
+          (selectedService === 'custom' && 
+           parsedConfig.customServer && 
+           parsedConfig.customServer.apiUrl)
+        ) {
+          setHasConfig(true);
+        }
+      }
+    } catch (error) {
+      console.error('检查配置时出错:', error);
+    }
+  }, []);
+
+  // 上传一组图片
+  const handleUploadGroup = async (groupKey, groupImages) => {
+    if (!hasConfig) {
+      alert('请先配置上传服务');
+      return;
+    }
+    
+    if (isUploading) {
+      return;
+    }
+    
+    setIsUploading(true);
+    setUploadResults(prev => ({ ...prev, [groupKey]: { status: 'uploading' } }));
+    
+    try {
+      const results = await uploadService.uploadBatch(groupImages);
+      
+      // 检查结果
+      const allSucceeded = results.every(result => result.success);
+      const successCount = results.filter(result => result.success).length;
+      
+      setUploadResults(prev => ({
+        ...prev,
+        [groupKey]: {
+          status: allSucceeded ? 'success' : 'partial',
+          results,
+          message: allSucceeded
+            ? '全部上传成功'
+            : `成功上传${successCount}/${results.length}张图片`
+        }
+      }));
+      
+      // 3秒后自动清除状态
+      setTimeout(() => {
+        setUploadResults(prev => {
+          const newResults = { ...prev };
+          delete newResults[groupKey];
+          return newResults;
+        });
+      }, 3000);
+      
+    } catch (error) {
+      console.error('上传图片组时出错:', error);
+      
+      setUploadResults(prev => ({
+        ...prev,
+        [groupKey]: {
+          status: 'error',
+          message: error.message || '上传失败'
+        }
+      }));
+      
+      // 3秒后自动清除错误状态
+      setTimeout(() => {
+        setUploadResults(prev => {
+          const newResults = { ...prev };
+          delete newResults[groupKey];
+          return newResults;
+        });
+      }, 3000);
+      
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
-    <main>
-      {/* <h1>图片快速排序</h1> */}
-      
-      {/* 固定在顶部的前缀输入区域 */}
-      {selectedCount > 0 && (
-        <div className="floating-prefix-form">
-          <input 
-            type="text" 
-            placeholder="输入前缀..." 
-            value={prefix}
-            onChange={(e) => setPrefix(e.target.value)}
-            className="prefix-input"
-          />
-          <button 
-            onClick={applyPrefix}
-            disabled={!prefix.trim()}
-            className="apply-button"
-          >
-            应用前缀
-          </button>
+    <DndProvider backend={HTML5Backend}>
+      <main>
+        {/* 添加配置页面链接 */}
+        <div className="header-actions">
+          <Link href="/config" className="config-link">
+            <span className="icon">⚙️</span> 图片上传配置
+          </Link>
         </div>
-      )}
-      
-      {/* 取消注释此段代码，恢复dropzone-info提示 */}
-      {images.length === 0 && (
-        <div className="dropzone-info">
-          将图片拖放到页面任意位置，或点击选择图片
-        </div>
-      )}
-      
-      {/* 隐藏的图片上传组件，但通过ref暴露方法给整个页面 */}
-      <div style={{ display: 'none' }}>
-        <ImageDropzone onImagesDrop={handleImagesDrop} ref={(el) => window.imageDropzoneRef = el} />
-      </div>
-      
-      {images.length > 0 ? (
-        <>
-          <SortableImageGrid 
-            ref={gridRef}
-            images={images} 
-            setImages={setImages} 
-            onSelectedChange={handleSelectedImagesChange}
+        
+        {/* <h1>图片快速排序</h1> */}
+        
+        {/* 固定在顶部的前缀输入区域 */}
+        {selectedCount > 0 && (
+          <div className="floating-prefix-form">
+            <input 
+              type="text" 
+              placeholder="输入前缀..." 
+              value={prefix}
+              onChange={(e) => setPrefix(e.target.value)}
+              className="prefix-input"
+            />
+            <button 
+              onClick={applyPrefix}
+              disabled={selectedCount === 0 || !prefix.trim()}
+              className="apply-button"
+            >
+              应用前缀
+            </button>
+          </div>
+        )}
+        
+        {/* 取消注释此段代码，恢复dropzone-info提示 */}
+        {images.length === 0 && (
+          <div className="dropzone-info">
+            将图片拖放到页面任意位置，或双击页面任意位置选择图片
+          </div>
+        )}
+        
+        {/* 隐藏的图片上传组件，但通过ref暴露方法给整个页面 */}
+        <div style={{ display: 'none' }}>
+          <ImageDropzone 
+            onImagesDrop={handleImagesDrop} 
+            ref={imageDropzoneRef}
           />
-          
-          {/* 选中图片预览区 */}
-          {selectedCount > 0 && (
-            <div className="selected-preview">
-              <h3>已选中图片 ({selectedCount})</h3>
-              <div className="selected-images-row">
-                {images
-                  .filter(img => selectedImagesRef.current.includes(img.id))
-                  .sort((a, b) => {
-                    // 按照选中的顺序排序
-                    return selectedImagesRef.current.indexOf(a.id) - selectedImagesRef.current.indexOf(b.id);
-                  })
-                  .map((image, index) => (
-                    <div key={`selected-${image.id}`} className="selected-thumbnail">
-                      <img 
-                        src={image.preview} 
-                        alt={`Selected ${index + 1}`} 
-                      />
-                      <div className="selected-number">{index + 1}</div>
-                      <div className="selected-filename">
-                        {image.file.displayName || image.file.name}
+        </div>
+        
+        {images.length > 0 ? (
+          <>
+            <SortableImageGrid 
+              ref={gridRef}
+              images={images} 
+              setImages={setImages} 
+              onSelectedChange={handleSelectedImagesChange}
+            />
+            
+            {/* 选中图片预览区 */}
+            {selectedCount > 0 && (
+              <div className="selected-images-preview">
+                <div className="selected-images-header">
+                  <h3>已选择 {selectedCount} 张图片</h3>
+                </div>
+                <div className="selected-images-container">
+                  {images
+                    .filter(img => selectedImagesRef.current.includes(img.id))
+                    .map((image, idx) => {
+                      const sortedIndex = selectedImagesRef.current.indexOf(image.id);
+                      return (
+                        <div key={image.id} className="selected-thumbnail">
+                          <div className="selection-number">{sortedIndex + 1}</div>
+                          <img src={image.preview} alt={`选中图片 ${idx + 1}`} />
+                          <div className="selected-filename">{image.file.displayName || image.file.name}</div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+            
+            {/* 重命名后的图片展示区 */}
+            {renamedImages.length > 0 && (
+              <div className="renamed-images-section">
+                <h3>已重命名的图片</h3>
+                
+                {/* 按组显示重命名的图片 */}
+                {Array.from(
+                  // 按前缀和应用时间分组
+                  renamedImages.reduce((groups, img) => {
+                    const key = `${img.prefix}-${img.applyTime}`;
+                    if (!groups.has(key)) {
+                      groups.set(key, {
+                        prefix: img.prefix,
+                        time: img.applyTime,
+                        images: []
+                      });
+                    }
+                    groups.get(key).images.push(img);
+                    return groups;
+                  }, new Map())
+                ).map(([groupKey, group]) => (
+                  <div key={groupKey} className="renamed-group">
+                    <div className="renamed-group-header">
+                      <div>
+                        <span className="renamed-group-prefix">{group.prefix}</span>
+                        <span className="renamed-group-time">({group.time})</span>
+                      </div>
+                      
+                      <div className="group-actions">
+                        <button 
+                          className="group-download-btn"
+                          onClick={() => downloadGroupImages(group.images)}
+                          disabled={isDownloading}
+                        >
+                          {isDownloading ? '下载中...' : '下载此组'}
+                        </button>
+                        
+                        <button 
+                          className="upload-group-btn"
+                          onClick={() => handleUploadGroup(groupKey, group.images)}
+                          disabled={isUploading || !hasConfig}
+                          title={!hasConfig ? '请先配置上传服务' : ''}
+                        >
+                          <span className="icon">☁️</span>
+                          {uploadResults[groupKey]?.status === 'uploading'
+                            ? '上传中...'
+                            : '上传到云'}
+                        </button>
                       </div>
                     </div>
-                  ))
-                }
-              </div>
-            </div>
-          )}
-          
-          {/* 重命名后的图片展示区 */}
-          {renamedImages.length > 0 && (
-            <div className="renamed-preview">
-              <h3>已重命名图片 ({renamedImages.length})</h3>
-              
-              {/* 根据应用时间分组显示 */}
-              {(() => {
-                // 按应用时间分组
-                const groupedImages = {};
-                renamedImages.forEach(image => {
-                  const applyTimeKey = image.applyTime || '未知时间';
-                  const prefixKey = image.prefix || '未知前缀';
-                  const groupKey = `${prefixKey}-${applyTimeKey}`;
-                  
-                  if (!groupedImages[groupKey]) {
-                    groupedImages[groupKey] = {
-                      prefix: prefixKey,
-                      applyTime: applyTimeKey,
-                      images: []
-                    };
-                  }
-                  
-                  groupedImages[groupKey].images.push(image);
-                });
-                
-                // 转换为数组并按时间倒序排列（最近的在前面）
-                const groups = Object.values(groupedImages).sort((a, b) => {
-                  // 按时间倒序排列
-                  return new Date(b.applyTime) - new Date(a.applyTime);
-                });
-                
-                return groups.map((group, groupIndex) => (
-                  <div key={`group-${groupIndex}`} className="renamed-group">
-                    <div className="renamed-group-header">
-                      <span className="renamed-group-prefix">{group.prefix}</span>
-                      <span className="renamed-group-time">{group.applyTime}</span>
-                      <button 
-                        className="group-download-btn"
-                        onClick={() => downloadGroupImages(group.images, group.prefix)}
-                        disabled={isDownloading}
-                      >
-                        {isDownloading ? '下载中...' : '下载此组'}
-                      </button>
-                    </div>
-                    <div className="renamed-images-row">
-                      {group.images.map((image, index) => (
-                        <div key={`renamed-${image.id}`} className="renamed-thumbnail">
-                          <img 
-                            src={image.preview} 
-                            alt={`Renamed ${index + 1}`} 
-                          />
-                          <div className="renamed-filename">
-                            {image.file.displayName}
-                          </div>
+                    
+                    <div className="renamed-images-grid">
+                      {group.images.map((image) => (
+                        <div key={image.id} className="renamed-image-item">
+                          {uploadResults[groupKey] && (
+                            <div className={`upload-status ${uploadResults[groupKey].status}`}>
+                              <div className="upload-status-content">
+                                {uploadResults[groupKey].status === 'uploading' && '上传中...'}
+                                {uploadResults[groupKey].status === 'success' && '✓ 上传成功'}
+                                {uploadResults[groupKey].status === 'partial' && uploadResults[groupKey].message}
+                                {uploadResults[groupKey].status === 'error' && `✗ ${uploadResults[groupKey].message}`}
+                              </div>
+                            </div>
+                          )}
+                          <img src={image.preview} alt={image.file.displayName} />
+                          <div className="renamed-filename">{image.file.displayName}</div>
                         </div>
                       ))}
                     </div>
+                    
+                    {!hasConfig && (
+                      <div className="config-missing">
+                        上传功能需要先配置云服务。 
+                        <Link href="/config" className="config-link">
+                          <span>前往配置</span>
+                        </Link>
+                      </div>
+                    )}
                   </div>
-                ));
-              })()}
-              
-              <div className="renamed-actions">
-                <button onClick={downloadRenamedImages} disabled={isDownloading}>
-                  {isDownloading ? '正在打包...' : '下载所有重命名图片'}
-                </button>
-                <button onClick={clearRenamedImages} className="secondary-button">
-                  清除所有重命名图片
-                </button>
+                ))}
+                
+                <div className="renamed-actions">
+                  <button 
+                    onClick={downloadRenamedImages}
+                    disabled={isDownloading}
+                  >
+                    {isDownloading ? '下载中...' : '下载所有重命名图片'}
+                  </button>
+                  
+                  <button onClick={clearRenamedImages}>
+                    清空重命名图片
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
-          
-          <div className="actions">
-            <button onClick={clearImages}>
-              清除所有图片
-            </button>
-            <button onClick={deleteSelected}>
-              删除选中图片
-            </button>
-            <button onClick={downloadOrder}>
-              下载排序结果
-            </button>
-            {selectedCount > 0 && (
-              <button 
-                onClick={downloadSelectedImages}
-                className="highlight-button"
-                disabled={isDownloading}
-              >
-                {isDownloading ? '正在打包...' : '下载选中图片（ZIP）'}
-              </button>
             )}
+            
+            <div className="actions">
+              <button onClick={clearImages}>
+                清空所有图片
+              </button>
+              <button onClick={deleteSelected}>
+                删除选中图片
+              </button>
+              <button onClick={downloadOrder}>
+                下载排序结果
+              </button>
+              {selectedCount > 0 && (
+                <button 
+                  onClick={downloadSelectedImages}
+                  disabled={selectedImagesRef.current.length === 0 || isDownloading}
+                >
+                  {isDownloading ? '下载中...' : `下载选中图片 (${selectedImagesRef.current.length})`}
+                </button>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="empty-message">
+            {/* <p>请拖拽或选择图片以开始排序</p> */}
           </div>
-        </>
-      ) : (
-        <div className="empty-message">
-          {/* <p>请拖拽或选择图片以开始排序</p> */}
-        </div>
-      )}
-    </main>
+        )}
+      </main>
+    </DndProvider>
   );
 } 

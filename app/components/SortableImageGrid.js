@@ -1,8 +1,7 @@
 'use client';
 
 import { useRef, useState, useCallback, useEffect, useImperativeHandle, forwardRef } from 'react';
-import { DndProvider, useDrag, useDrop } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
+import { useDrag, useDrop } from 'react-dnd';
 
 // 拖拽项组件
 function DraggableImage({ image, index, moveImage, isSelected, selectionIndex, onToggleSelect }) {
@@ -170,21 +169,19 @@ const SortableImageGrid = forwardRef(({ images, setImages, onSelectedChange }, r
   }, []);
 
   return (
-    <DndProvider backend={HTML5Backend}>
-      <div className="image-grid">
-        {images.map((image, index) => (
-          <DraggableImage
-            key={image.id}
-            image={image}
-            index={index}
-            moveImage={moveImage}
-            isSelected={selectedImageMap.has(image.id)}
-            selectionIndex={selectedImageMap.get(image.id)}
-            onToggleSelect={handleToggleSelect}
-          />
-        ))}
-      </div>
-    </DndProvider>
+    <div className="image-grid">
+      {images.map((image, index) => (
+        <DraggableImage
+          key={image.id}
+          image={image}
+          index={index}
+          moveImage={moveImage}
+          isSelected={selectedImageMap.has(image.id)}
+          selectionIndex={selectedImageMap.get(image.id)}
+          onToggleSelect={handleToggleSelect}
+        />
+      ))}
+    </div>
   );
 });
 
