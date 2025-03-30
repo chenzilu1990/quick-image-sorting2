@@ -4,13 +4,20 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import '../../globals.css';
 import comfyUIService from '../../services/comfyuiService';
+import type { ComfyUIConfig } from '@/types';
+
+interface ConnectionStatus {
+  status: boolean;
+  message: string;
+  data?: any;
+}
 
 export default function ComfyUIConfig() {
   // ComfyUI配置
-  const [serverUrl, setServerUrl] = useState('http://localhost:8088');
-  const [saveMessage, setSaveMessage] = useState('');
-  const [connectionStatus, setConnectionStatus] = useState(null);
-  const [isTesting, setIsTesting] = useState(false);
+  const [serverUrl, setServerUrl] = useState<string>('http://localhost:8088');
+  const [saveMessage, setSaveMessage] = useState<string>('');
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus | null>(null);
+  const [isTesting, setIsTesting] = useState<boolean>(false);
   
   // 从localStorage加载配置
   useEffect(() => {
@@ -25,7 +32,7 @@ export default function ComfyUIConfig() {
   // 保存配置
   const saveConfig = () => {
     try {
-      const config = {
+      const config: ComfyUIConfig = {
         serverUrl,
         defaultWorkflow: ''
       };
@@ -41,7 +48,7 @@ export default function ComfyUIConfig() {
       setTimeout(() => {
         setSaveMessage('');
       }, 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('保存配置出错:', error);
       setSaveMessage('保存失败: ' + error.message);
     }
@@ -55,7 +62,7 @@ export default function ComfyUIConfig() {
     try {
       const result = await comfyUIService.checkConnection();
       setConnectionStatus(result);
-    } catch (error) {
+    } catch (error: any) {
       setConnectionStatus({
         status: false,
         message: error.message || '连接测试失败'
@@ -153,4 +160,4 @@ export default function ComfyUIConfig() {
       </div>
     </main>
   );
-}
+} 

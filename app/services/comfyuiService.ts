@@ -1,11 +1,20 @@
+import { ComfyUIConfig, Workflow } from '@/types';
+
 /**
  * ComfyUI服务 - 直接API通信版
  * 使用ComfyUI的API进行通信，需要在ComfyUI启动时添加--enable-cors-header参数
  */
 
 // 从localStorage获取ComfyUI配置
-const getConfig = () => {
+const getConfig = (): ComfyUIConfig => {
   try {
+    if (typeof window === 'undefined') {
+      return {
+        serverUrl: 'http://localhost:8088',
+        defaultWorkflow: ''
+      };
+    }
+    
     const savedConfig = localStorage.getItem('comfyUIConfig');
     if (!savedConfig) {
       return {
@@ -13,7 +22,7 @@ const getConfig = () => {
         defaultWorkflow: ''
       };
     }
-    return JSON.parse(savedConfig);
+    return JSON.parse(savedConfig) as ComfyUIConfig;
   } catch (error) {
     console.error('获取ComfyUI配置出错:', error);
     return {
@@ -24,7 +33,7 @@ const getConfig = () => {
 };
 
 // 保存ComfyUI配置
-const saveConfig = (config) => {
+const saveConfig = (config: ComfyUIConfig): boolean => {
   try {
     localStorage.setItem('comfyUIConfig', JSON.stringify(config));
     return true;
@@ -34,8 +43,14 @@ const saveConfig = (config) => {
   }
 };
 
+interface ConnectionResult {
+  status: boolean;
+  message: string;
+  data?: any;
+}
+
 // 检查ComfyUI配置有效性和连接状态
-const checkConnection = async () => {
+const checkConnection = async (): Promise<ConnectionResult> => {
   try {
     const config = getConfig();
     
@@ -57,7 +72,7 @@ const checkConnection = async () => {
       message: '连接成功',
       data
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('连接ComfyUI出错:', error);
     return {
       status: false,
@@ -67,7 +82,7 @@ const checkConnection = async () => {
 };
 
 // 获取可用的工作流列表
-const getWorkflows = async () => {
+const getWorkflows = async (): Promise<Workflow[]> => {
   try {
     const config = getConfig();
     const response = await fetch(`${config.serverUrl}/history`, {
@@ -85,7 +100,7 @@ const getWorkflows = async () => {
     
     // 转换为更易用的格式
     const workflows = Object.entries(data)
-      .map(([id, info]) => ({
+      .map(([id, info]: [string, any]) => ({
         id,
         timestamp: info.timestamp || Date.now() / 1000,
         name: info.prompt?.extra?.name || `工作流 ${id.substring(0, 8)}`
@@ -99,8 +114,19 @@ const getWorkflows = async () => {
   }
 };
 
+interface ImageUploadResult {
+  success: boolean;
+  message: string;
+  comfyUIUrl?: string;
+  imageName?: string;
+}
+
 // 将图片发送到ComfyUI
-const sendImageToComfyUI = async (imageUrl, imageName, workflowId = null) => {
+const sendImageToComfyUI = async (
+  imageUrl: string, 
+  imageName: string, 
+  workflowId: string | null = null
+): Promise<ImageUploadResult> => {
   try {
     const config = getConfig();
     
@@ -146,7 +172,7 @@ const sendImageToComfyUI = async (imageUrl, imageName, workflowId = null) => {
       comfyUIUrl,
       imageName: uploadData.name
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('发送图片到ComfyUI出错:', error);
     return {
       success: false,
@@ -157,7 +183,7 @@ const sendImageToComfyUI = async (imageUrl, imageName, workflowId = null) => {
 };
 
 // 打开ComfyUI页面
-const openComfyUIWithWorkflow = (workflowId = null) => {
+const openComfyUIWithWorkflow = (workflowId: string | null = null): string => {
   const config = getConfig();
   let url = config.serverUrl;
   
