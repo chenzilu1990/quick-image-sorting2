@@ -1,12 +1,21 @@
+// 扩展原生File类型
+interface CustomFile extends File {
+  displayName?: string;
+}
+
 // 图片文件类型定义
 export interface ImageFile {
   id: string;
-  file: File;
+  file: CustomFile;
   preview: string;
   displayName?: string;
   isSelected?: boolean;
   group?: string;
   originalName?: string;
+  isRenamed?: boolean;
+  originalImageId?: string;
+  prefix?: string;
+  applyTime?: string;
 }
 
 // 重命名配置类型定义
