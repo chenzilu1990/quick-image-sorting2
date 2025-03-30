@@ -362,6 +362,7 @@ button,
   position: relative;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  padding-bottom: 40px; /* 为编辑按钮留出空间 */
 }
 
 .renamed-image-item:hover {
@@ -378,7 +379,7 @@ button,
 
 .renamed-filename {
   position: absolute;
-  bottom: 0;
+  bottom: 40px; /* 位于编辑按钮上方 */
   left: 0;
   right: 0;
   background-color: rgba(0, 0, 0, 0.7);
@@ -389,6 +390,18 @@ button,
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* 编辑按钮位置 */
+.edit-comfyui-btn {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  border-radius: 0 0 8px 8px;
+  padding: 8px 0;
+  font-size: 12px;
+  background-color: #673ab7;
 }
 
 .renamed-actions {
@@ -851,4 +864,333 @@ body.drag-active::after {
 .info-icon {
   margin-right: 0.5rem;
   font-size: 1.2rem;
+}
+
+/* ComfyUI配置和工作流样式 */
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.status-indicator {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: 500;
+  flex: 1;
+}
+
+.status-indicator.success {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+
+.status-indicator.error {
+  background-color: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+}
+
+.workflow-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.workflows-list {
+  margin-top: 2rem;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.workflows-list h3 {
+  margin-bottom: 1rem;
+  color: #424242;
+  font-size: 1.1rem;
+}
+
+.no-items, .loading-text, .no-workflows {
+  color: #757575;
+  font-style: italic;
+  margin: 1rem 0;
+}
+
+ul.workflows {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.workflow-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem;
+  margin-bottom: 0.8rem;
+  background-color: white;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+  transition: all 0.2s ease;
+}
+
+.workflow-item:hover {
+  border-color: #bbdefb;
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.1);
+}
+
+.workflow-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.workflow-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.workflow-time {
+  font-size: 0.85rem;
+  color: #757575;
+}
+
+.open-workflow-btn {
+  background-color: #2196f3;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+}
+
+.open-workflow-btn:hover {
+  background-color: #1976d2;
+}
+
+.refresh-btn {
+  margin-top: 1rem;
+  background-color: #f5f5f5;
+  color: #424242;
+  border: 1px solid #e0e0e0;
+  width: 100%;
+}
+
+.refresh-btn:hover {
+  background-color: #eeeeee;
+  border-color: #bdbdbd;
+}
+
+/* 编辑功能按钮 */
+.edit-comfyui-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #673ab7;
+  color: white;
+  border: none;
+  padding: 0.5rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.edit-comfyui-btn:hover {
+  background-color: #5e35b1;
+  transform: translateY(-2px);
+}
+
+.edit-comfyui-btn:disabled {
+  background-color: #d1c4e9;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.edit-comfyui-btn .icon {
+  font-size: 1rem;
+}
+
+/* 工作流选择弹窗 */
+.workflow-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.workflow-modal-content {
+  background-color: white;
+  width: 90%;
+  max-width: 600px;
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.workflow-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.workflow-modal-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.close-modal-btn {
+  background: none;
+  border: none;
+  color: #757575;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.close-modal-btn:hover {
+  background-color: #f5f5f5;
+  color: #424242;
+}
+
+.workflow-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+  gap: 1rem;
+}
+
+.cancel-btn {
+  background-color: #f5f5f5;
+  color: #424242;
+  border: 1px solid #e0e0e0;
+}
+
+.cancel-btn:hover {
+  background-color: #eeeeee;
+  border-color: #bdbdbd;
+}
+
+.proceed-btn {
+  background-color: #673ab7;
+}
+
+.proceed-btn:hover {
+  background-color: #5e35b1;
+}
+
+/* ComfyUI进度指示器 */
+.processing-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(103, 58, 183, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  border-radius: 8px;
+  color: white;
+  font-weight: bold;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ComfyUI配置页面特有样式 */
+.comfyui-actions {
+  display: flex;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.open-comfyui-btn {
+  background-color: #673ab7;
+}
+
+.open-comfyui-btn:hover {
+  background-color: #5e35b1;
+}
+
+.usage-instructions {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: #f3e5f5;
+  border-radius: 8px;
+  border-left: 4px solid #9c27b0;
+}
+
+.usage-instructions h3 {
+  margin-bottom: 1rem;
+  color: #6a1b9a;
+  font-size: 1.1rem;
+}
+
+.usage-instructions p {
+  margin-bottom: 1rem;
+  color: #4a148c;
+}
+
+.usage-instructions ol {
+  margin-left: 1.5rem;
+  color: #4a148c;
+}
+
+.usage-instructions li {
+  margin-bottom: 0.5rem;
+}
+
+/* 警告文本样式 */
+.warning {
+  color: #d32f2f;
+  font-weight: bold;
+  padding: 0.75rem;
+  background-color: #ffebee;
+  border-left: 4px solid #f44336;
+  border-radius: 4px;
+  margin-top: 1rem;
+}
+
+.warning code {
+  background-color: #ffcdd2;
+  padding: 2px 4px;
+  border-radius: 3px;
 } 

@@ -9,6 +9,7 @@ import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import Link from 'next/link';
 import uploadService from './services/uploadService';
+import comfyuiService from './services/comfyuiService';  // 导入ComfyUI服务
 
 export default function Home() {
   const [images, setImages] = useState([]);
@@ -22,6 +23,13 @@ export default function Home() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResults, setUploadResults] = useState({});
   const [hasConfig, setHasConfig] = useState(false);
+  const [hasComfyUIConfig, setHasComfyUIConfig] = useState(false);
+  const [isProcessingComfyUI, setIsProcessingComfyUI] = useState(false);
+  const [showWorkflowModal, setShowWorkflowModal] = useState(false);
+  const [availableWorkflows, setAvailableWorkflows] = useState([]);
+  const [selectedWorkflow, setSelectedWorkflow] = useState('');
+  const [currentEditingImage, setCurrentEditingImage] = useState(null);
+  const [isLoadingWorkflows, setIsLoadingWorkflows] = useState(false);
 
   // 接收选中图片的回调
   const handleSelectedImagesChange = useCallback((selectedIds) => {
@@ -454,6 +462,96 @@ export default function Home() {
     }
   }, []);
 
+  // 检查ComfyUI配置
+  useEffect(() => {
+    try {
+      const config = comfyuiService.getConfig();
+      if (config && config.serverUrl) {
+        setHasComfyUIConfig(true);
+      }
+    } catch (error) {
+      console.error('检查ComfyUI配置时出错:', error);
+    }
+  }, []);
+
+  // 加载ComfyUI工作流列表
+  const loadWorkflows = async () => {
+    if (!hasComfyUIConfig) return;
+    
+    setIsLoadingWorkflows(true);
+    
+    try {
+      // 先测试连接
+      const connectionTest = await comfyuiService.checkConnection();
+      if (!connectionTest.status) {
+        alert('无法连接到ComfyUI服务器，请检查配置和服务器状态');
+        return;
+      }
+      
+      // 获取工作流列表
+      const workflows = await comfyuiService.getWorkflows();
+      setAvailableWorkflows(workflows);
+      
+      // 如果有默认工作流，预选中
+      const config = comfyuiService.getConfig();
+      if (config.defaultWorkflow && workflows.some(w => w.id === config.defaultWorkflow)) {
+        setSelectedWorkflow(config.defaultWorkflow);
+      }
+    } catch (error) {
+      console.error('加载ComfyUI工作流出错:', error);
+    } finally {
+      setIsLoadingWorkflows(false);
+    }
+  };
+
+  // 打开工作流选择模态框
+  const openWorkflowModal = (image) => {
+    if (!hasComfyUIConfig) {
+      alert('请先配置ComfyUI服务');
+      return;
+    }
+    
+    setCurrentEditingImage(image);
+    loadWorkflows();
+    setShowWorkflowModal(true);
+  };
+
+  // 关闭工作流选择模态框
+  const closeWorkflowModal = () => {
+    setShowWorkflowModal(false);
+    setCurrentEditingImage(null);
+  };
+
+  // 用ComfyUI编辑图片
+  const handleEditWithComfyUI = async () => {
+    if (!currentEditingImage || !hasComfyUIConfig) return;
+    
+    setIsProcessingComfyUI(true);
+    closeWorkflowModal();
+    
+    try {
+      // 使用新的API通信方法，可选传递工作流ID
+      const result = await comfyuiService.sendImageToComfyUI(
+        currentEditingImage.preview,
+        currentEditingImage.file.displayName || currentEditingImage.file.name,
+        selectedWorkflow || null // 如果有选择工作流则传递
+      );
+      
+      if (result.success) {
+        // 提示成功
+        alert('图片已成功上传并在ComfyUI中打开。');
+      } else {
+        alert(`操作失败: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('编辑图片出错:', error);
+      alert(`编辑图片出错: ${error.message || '未知错误'}`);
+    } finally {
+      setIsProcessingComfyUI(false);
+      setCurrentEditingImage(null);
+    }
+  };
+
   // 上传一组图片
   const handleUploadGroup = async (groupKey, groupImages) => {
     if (!hasConfig) {
@@ -528,6 +626,9 @@ export default function Home() {
           <Link href="/config" className="config-link">
             <span className="icon">⚙️</span> 图片上传配置
           </Link>
+          <Link href="/config/comfyui" className="config-link">
+            <span className="icon">🎨</span> ComfyUI配置
+          </Link>
         </div>
         
         {/* <h1>图片快速排序</h1> */}
@@ -599,6 +700,51 @@ export default function Home() {
               </div>
             )}
             
+            {/* 工作流选择模态框 */}
+            {showWorkflowModal && (
+              <div className="workflow-modal">
+                <div className="workflow-modal-content">
+                  <div className="workflow-modal-header">
+                    <h3>选择ComfyUI工作流</h3>
+                    <button className="close-modal-btn" onClick={closeWorkflowModal}>×</button>
+                  </div>
+                  
+                  {isLoadingWorkflows ? (
+                    <p className="loading-text">正在加载工作流列表...</p>
+                  ) : (
+                    availableWorkflows.length > 0 ? (
+                      <div className="workflow-select">
+                        <select
+                          value={selectedWorkflow}
+                          onChange={(e) => setSelectedWorkflow(e.target.value)}
+                        >
+                          <option value="">-- 使用默认工作流 --</option>
+                          {availableWorkflows.map(workflow => (
+                            <option key={workflow.id} value={workflow.id}>
+                              {workflow.name} ({new Date(workflow.timestamp * 1000).toLocaleString()})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : (
+                      <p className="no-workflows">未找到可用的工作流，请先在ComfyUI中创建工作流</p>
+                    )
+                  )}
+                  
+                  <div className="workflow-modal-footer">
+                    <button onClick={closeWorkflowModal} className="cancel-btn">取消</button>
+                    <button 
+                      onClick={handleEditWithComfyUI} 
+                      className="proceed-btn"
+                      disabled={isLoadingWorkflows}
+                    >
+                      前往编辑
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* 重命名后的图片展示区 */}
             {renamedImages.length > 0 && (
               <div className="renamed-images-section">
@@ -663,8 +809,26 @@ export default function Home() {
                               </div>
                             </div>
                           )}
+                          
+                          {isProcessingComfyUI && currentEditingImage && currentEditingImage.id === image.id && (
+                            <div className="processing-indicator">
+                              <div className="spinner"></div>
+                              <div>正在处理...</div>
+                            </div>
+                          )}
+                          
                           <img src={image.preview} alt={image.file.displayName} />
                           <div className="renamed-filename">{image.file.displayName}</div>
+                          
+                          {/* 添加ComfyUI编辑按钮 */}
+                          <button 
+                            className="edit-comfyui-btn"
+                            onClick={() => openWorkflowModal(image)}
+                            disabled={!hasComfyUIConfig || isProcessingComfyUI}
+                            title={!hasComfyUIConfig ? '请先配置ComfyUI服务' : '使用ComfyUI编辑图片'}
+                          >
+                            <span className="icon">🎨</span> 使用ComfyUI编辑
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -673,6 +837,15 @@ export default function Home() {
                       <div className="config-missing">
                         上传功能需要先配置云服务。 
                         <Link href="/config" className="config-link">
+                          <span>前往配置</span>
+                        </Link>
+                      </div>
+                    )}
+                    
+                    {!hasComfyUIConfig && (
+                      <div className="config-missing">
+                        编辑功能需要先配置ComfyUI。 
+                        <Link href="/config/comfyui" className="config-link">
                           <span>前往配置</span>
                         </Link>
                       </div>
