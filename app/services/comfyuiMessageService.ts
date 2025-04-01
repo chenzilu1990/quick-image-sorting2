@@ -87,8 +87,7 @@ class ComfyUIMessageService {
     if (!this.isClient) {
       return {
         serverUrl: 'http://localhost:8088',
-        defaultWorkflow: '',
-        workflowsPath: ''
+        defaultWorkflow: ''
       };
     }
     
@@ -97,8 +96,7 @@ class ComfyUIMessageService {
       if (!savedConfig) {
         return {
           serverUrl: 'http://localhost:8088',
-          defaultWorkflow: '',
-          workflowsPath: ''
+          defaultWorkflow: ''
         };
       }
       return JSON.parse(savedConfig) as ComfyUIConfig;
@@ -106,8 +104,7 @@ class ComfyUIMessageService {
       console.error('获取ComfyUI配置出错:', error);
       return {
         serverUrl: 'http://localhost:8088',
-        defaultWorkflow: '',
-        workflowsPath: ''
+        defaultWorkflow: ''
       };
     }
   }

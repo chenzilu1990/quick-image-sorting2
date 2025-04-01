@@ -1233,4 +1233,78 @@ ul.workflows {
 
 .image-item.invalid img {
   opacity: 0.5;
+}
+
+/* 输入框与按钮的组合样式 */
+.input-with-button {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.input-with-button input {
+  flex: 1;
+}
+
+.request-auth-btn {
+  background-color: #4a5568;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0 15px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.request-auth-btn:hover {
+  background-color: #2d3748;
+}
+
+.request-auth-btn:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+}
+
+/* 已授权路径的显示样式 */
+.authorized-path {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background-color: #edf2f7;
+  border-radius: 4px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+}
+
+.authorized-label {
+  font-weight: 600;
+  margin-right: 8px;
+  color: #4a5568;
+}
+
+.authorized-value {
+  color: #2c5282;
+  font-family: monospace;
+  background-color: #ebf4ff;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+/* 请求授权按钮容器 */
+.request-auth-container {
+  margin-bottom: 10px;
+}
+
+/* 全宽按钮 */
+.request-auth-btn.full-width {
+  width: 100%;
+  padding: 12px 15px;
+  font-size: 15px;
+  font-weight: 500;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #4a5568;
 } 

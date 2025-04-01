@@ -11,8 +11,7 @@ const getConfig = (): ComfyUIConfig => {
     if (typeof window === 'undefined') {
       return {
         serverUrl: 'http://localhost:8088',
-        defaultWorkflow: '',
-        workflowsPath: ''
+        defaultWorkflow: ''
       };
     }
     
@@ -20,8 +19,7 @@ const getConfig = (): ComfyUIConfig => {
     if (!savedConfig) {
       return {
         serverUrl: 'http://localhost:8088',
-        defaultWorkflow: '',
-        workflowsPath: ''
+        defaultWorkflow: ''
       };
     }
     return JSON.parse(savedConfig) as ComfyUIConfig;
@@ -29,8 +27,7 @@ const getConfig = (): ComfyUIConfig => {
     console.error('获取ComfyUI配置出错:', error);
     return {
       serverUrl: 'http://localhost:8088',
-      defaultWorkflow: '',
-      workflowsPath: ''
+      defaultWorkflow: ''
     };
   }
 };
@@ -41,10 +38,10 @@ const isFileSystemAPIAvailable = (): boolean => {
 };
 
 // 请求目录访问权限
-const requestDirectoryAccess = async (path: string): Promise<boolean> => {
+const requestDirectoryAccess = async (path: string): Promise<{success: boolean, directoryName?: string}> => {
   try {
     if (!path || path.trim() === '') {
-      return false;
+      return {success: false};
     }
     
     console.log('请求文件系统访问权限...');
@@ -53,51 +50,52 @@ const requestDirectoryAccess = async (path: string): Promise<boolean> => {
     if (!isFileSystemAPIAvailable()) {
       console.warn('File System Access API不可用，使用备用方法');
       alert('您的浏览器不支持直接访问文件系统，请使用Chrome/Edge等现代浏览器。');
-      return false;
+      return {success: false};
     }
     
     try {
       // 请求文件系统访问权限
+      // alert('请在弹出的选择器中选择您的ComfyUI工作流文件夹');
       directoryHandle = await (window as unknown as WindowWithFileSystem).showDirectoryPicker({
         id: 'comfyui-workflows-' + Date.now(), // 添加时间戳确保每次请求都是唯一的
         mode: 'read'
         // 移除startIn参数，允许用户从任何位置开始选择
       });
       
-      console.log('文件选择器已显示');
-      return !!directoryHandle;
-    } catch (pickerError) {
-      console.error('文件选择器错误:', pickerError);
-      // 尝试替代方案
-      alert('请选择工作流文件夹');
-      return false;
+      console.log('文件选择器已显示，用户选择了目录:', directoryHandle?.name);
+      // 返回目录名称
+      return {
+        success: !!directoryHandle,
+        directoryName: directoryHandle ? directoryHandle.name : undefined
+      };
+    } catch (error: unknown) {
+      console.error('文件选择器错误:', error);
+      // 取消选择或发生错误
+      const pickerError = error as { name?: string };
+      if (pickerError.name === 'AbortError') {
+        alert('您取消了文件夹选择');
+      } else {
+        alert('选择工作流文件夹时出现错误');
+      }
+      return {success: false};
     }
   } catch (error) {
     console.error('请求目录访问权限失败:', error);
-    return false;
+    return {success: false};
   }
+};
+
+// 获取当前已授权的目录名称
+const getAuthorizedDirectoryName = (): string | null => {
+  return directoryHandle ? directoryHandle.name : null;
 };
 
 // 保存ComfyUI配置
 const saveConfig = async (config: ComfyUIConfig): Promise<boolean> => {
   try {
-    // 获取旧配置
-    const oldConfig = getConfig();
-    
-    // 只有在工作流路径发生变化或首次设置时，才请求目录访问权限
-    if (config.workflowsPath && 
-        config.workflowsPath.trim() !== '' && 
-        config.workflowsPath !== oldConfig.workflowsPath) {
-      console.log('工作流路径已更改，正在请求目录访问权限:', config.workflowsPath);
-      // 请求目录访问权限
-      const accessGranted = await requestDirectoryAccess(config.workflowsPath);
-      if (!accessGranted) {
-        console.warn('未获得目录访问权限，但仍会保存配置');
-      } else {
-        console.log('成功获取目录访问权限');
-      }
-    } else {
-      console.log('仅更新服务器URL或其他设置，无需重新请求目录权限');
+    // 保存当前授权目录名称
+    if (directoryHandle && !config.authorizedDirectoryName) {
+      config.authorizedDirectoryName = directoryHandle.name;
     }
     
     localStorage.setItem('comfyUIConfig', JSON.stringify(config));
@@ -177,24 +175,14 @@ let directoryHandle: FileSystemDirectoryHandle | null = null;
 // 获取可用的工作流列表
 const getWorkflows = async (): Promise<Workflow[]> => {
   try {
-    const config = getConfig();
-    
-    // 如果未设置工作流路径，返回空数组
-    if (!config.workflowsPath || config.workflowsPath.trim() === '') {
-      console.log('未设置工作流文件夹路径');
+    // 检查是否已有目录句柄
+    if (!directoryHandle) {
+      // 如果没有目录句柄，尝试请求权限
+      console.log('未获取目录句柄，请先授权目录访问');
       return [];
     }
     
     try {
-      // 如果之前已经获取了目录句柄，直接使用它
-      if (!directoryHandle) {
-        // 如果没有目录句柄，尝试请求权限
-        const accessGranted = await requestDirectoryAccess(config.workflowsPath);
-        if (!accessGranted) {
-          throw new Error('未获得目录访问权限');
-        }
-      }
-      
       // 读取目录中的所有文件
       const workflows: Workflow[] = [];
       
@@ -244,16 +232,14 @@ const getWorkflows = async (): Promise<Workflow[]> => {
       };
       
       // 开始读取目录
-      if (directoryHandle) {
-        await readDirectoryContents(directoryHandle);
-      }
+      await readDirectoryContents(directoryHandle);
       
       // 按修改时间排序，最新的排在前面
       workflows.sort((a, b) => b.timestamp - a.timestamp);
       
       return workflows;
     } catch (error) {
-      // 如果用户取消了选择或发生错误，重置目录句柄并返回空数组
+      // 如果发生错误，重置目录句柄并返回空数组
       console.error('读取目录失败:', error);
       directoryHandle = null;
       return [];
@@ -381,15 +367,7 @@ const sendGraphDataToComfyUI = async (json: string, workflowId: string | null = 
   }
 };
 
-// 重置目录句柄并重新请求权限
-const resetDirectoryAccess = async (): Promise<boolean> => {
-  directoryHandle = null;
-  const config = getConfig();
-  if (config.workflowsPath) {
-    return await requestDirectoryAccess(config.workflowsPath);
-  }
-  return false;
-};
+
 
 export default {
   getConfig,
@@ -399,5 +377,6 @@ export default {
   sendImageToComfyUI,
   sendGraphDataToComfyUI,
   openComfyUIWithWorkflow,
-  resetDirectoryAccess
+  requestDirectoryAccess,
+  getAuthorizedDirectoryName
 }; 

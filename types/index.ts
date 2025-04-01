@@ -17,7 +17,7 @@ export interface UploadResult {
 export interface ComfyUIConfig {
   serverUrl: string;
   defaultWorkflow: string;
-  workflowsPath: string;
+  authorizedDirectoryName?: string;  // 已授权的目录名
 }
 
 // 工作流类型
