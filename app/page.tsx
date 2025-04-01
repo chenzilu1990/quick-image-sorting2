@@ -44,6 +44,7 @@ export default function Home() {
   const [selectedWorkflow, setSelectedWorkflow] = useState<string>('');
   const [currentEditingImage, setCurrentEditingImage] = useState<ImageFile | null>(null);
   const [isLoadingWorkflows, setIsLoadingWorkflows] = useState<boolean>(false);
+  const [imagesLoaded, setImagesLoaded] = useState<boolean>(false); // 标记是否已加载图片
 
   // 接收选中图片的回调
   const handleSelectedImagesChange = useCallback((selectedIds: string[]) => {
@@ -51,12 +52,123 @@ export default function Home() {
     setSelectedCount(selectedIds.length);
   }, []);
 
+  // 保存图片数据到localStorage
+  const saveImagesToStorage = useCallback((imgList: ImageFile[]) => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      // 准备要保存的数据
+      const imageData = imgList.map(img => ({
+        id: img.id,
+        preview: img.preview,
+        file: {
+          name: img.file.name,
+          displayName: img.file.displayName,
+          size: img.file.size,
+          type: img.file.type
+        },
+        group: img.group
+      }));
+      
+      localStorage.setItem('savedImages', JSON.stringify(imageData));
+    } catch (error) {
+      console.error('保存图片数据失败:', error);
+    }
+  }, []);
+
+  // 保存重命名图片数据到localStorage
+  const saveRenamedImagesToStorage = useCallback((imgList: ImageFile[]) => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      // 准备要保存的数据
+      const imageData = imgList.map(img => ({
+        id: img.id,
+        preview: img.preview,
+        file: {
+          name: img.file.name,
+          displayName: img.file.displayName,
+          size: img.file.size,
+          type: img.file.type
+        },
+        group: img.group,
+        isRenamed: (img as any).isRenamed,
+        originalImageId: (img as any).originalImageId,
+        prefix: (img as any).prefix,
+        applyTime: (img as any).applyTime
+      }));
+      
+      localStorage.setItem('savedRenamedImages', JSON.stringify(imageData));
+    } catch (error) {
+      console.error('保存重命名图片数据失败:', error);
+    }
+  }, []);
+
+  // 从localStorage加载图片数据
+  const loadImagesFromStorage = useCallback(() => {
+    if (typeof window === 'undefined' || imagesLoaded) return;
+    
+    try {
+      const savedImagesJson = localStorage.getItem('savedImages');
+      if (savedImagesJson) {
+        const savedImagesData = JSON.parse(savedImagesJson);
+        
+        // 创建新的图片对象
+        const restoredImages = savedImagesData.map((imgData: any) => {
+          return {
+            ...imgData,
+            file: {
+              ...imgData.file,
+              // File对象不能直接序列化，我们使用已有的属性创建一个类似的对象
+              size: imgData.file.size,
+              type: imgData.file.type
+            }
+          } as ImageFile;
+        });
+        
+        if (restoredImages.length > 0) {
+          setImages(restoredImages);
+        }
+      }
+      
+      // 加载重命名的图片
+      const savedRenamedImagesJson = localStorage.getItem('savedRenamedImages');
+      if (savedRenamedImagesJson) {
+        const savedRenamedImagesData = JSON.parse(savedRenamedImagesJson);
+        
+        // 创建新的图片对象
+        const restoredRenamedImages = savedRenamedImagesData.map((imgData: any) => {
+          return {
+            ...imgData,
+            file: {
+              ...imgData.file,
+              size: imgData.file.size,
+              type: imgData.file.type
+            }
+          } as ImageFile;
+        });
+        
+        if (restoredRenamedImages.length > 0) {
+          setRenamedImages(restoredRenamedImages);
+        }
+      }
+      
+      setImagesLoaded(true); // 标记为已加载
+    } catch (error) {
+      console.error('加载保存的图片失败:', error);
+    }
+  }, [imagesLoaded]);
+
+  // 修改handleImagesDrop函数，添加保存到localStorage的功能
   const handleImagesDrop = useCallback((newImages: ImageFile[]) => {
     if (!newImages || !Array.isArray(newImages) || newImages.length === 0) return;
     
-    setImages((prevImages) => [...prevImages, ...newImages]);
-  }, []);
+    const updatedImages = [...images, ...newImages];
+    setImages(updatedImages);
+    saveImagesToStorage(updatedImages);
+  }, [images, saveImagesToStorage]);
 
+  // 修改clearImages函数，清除localStorage
   const clearImages = useCallback(() => {
     if (images.length === 0) return;
     
@@ -65,37 +177,10 @@ export default function Home() {
       if (image && image.preview) URL.revokeObjectURL(image.preview);
     });
     setImages([]);
+    localStorage.removeItem('savedImages');
   }, [images]);
 
-  const downloadOrder = useCallback(() => {
-    if (images.length === 0) return;
-    
-    // 创建文件名列表的文本
-    const fileNames = images.map((image, index) => {
-      // 如果已有显示名称，则使用它
-      if (image.file.displayName) {
-        return `${index + 1}. ${image.file.displayName}`;
-      }
-      
-      // 否则使用原始名称
-      return `${index + 1}. ${image.file.name}`;
-    }).join('\n');
-    
-    // 创建blob并下载
-    const blob = new Blob([fileNames], { type: 'text/plain' });
-    const href = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.href = href;
-    link.download = 'image-order.txt';
-    document.body.appendChild(link);
-    link.click();
-    
-    document.body.removeChild(link);
-    URL.revokeObjectURL(href);
-  }, [images]);
-
-  // 删除选中的图片
+  // 修改deleteSelected函数，更新localStorage
   const deleteSelected = useCallback(() => {
     if (selectedImagesRef.current.length === 0) return;
     
@@ -108,16 +193,107 @@ export default function Home() {
     });
     
     // 过滤掉选中的图片
-    setImages(prevImages => 
-      prevImages.filter(image => !selectedIds.has(image.id))
-    );
+    const updatedImages = images.filter(image => !selectedIds.has(image.id));
+    setImages(updatedImages);
+    saveImagesToStorage(updatedImages);
     
     // 先重置选中状态，确保UI立即更新
     if (gridRef.current) {
       gridRef.current.resetSelection();
     }
     
-  }, [images]);
+  }, [images, saveImagesToStorage]);
+
+  // 修改applyPrefix函数，更新localStorage
+  const applyPrefix = useCallback(() => {
+    if (selectedImagesRef.current.length === 0 || !prefix.trim()) return;
+    
+    // 保存当前选中的图片ID，因为之后会重置选择状态
+    const selectedIds = [...selectedImagesRef.current];
+    
+    // 获取选中图片及其选中顺序
+    const selectedImagesToRename: Array<ImageFile & {selectionIndex: number}> = [];
+    images.forEach(image => {
+      if (selectedIds.includes(image.id)) {
+        const index = selectedIds.indexOf(image.id);
+        selectedImagesToRename.push({...image, selectionIndex: index});
+      }
+    });
+    
+    // 为选中图片创建重命名副本
+    const newRenamedImages = selectedImagesToRename.map(image => {
+      const selectedIndex = image.selectionIndex;
+      let typeName = '';
+      
+      // 第一张图片为MAIN
+      if (selectedIndex === 0) {
+        typeName = 'MAIN';
+      } 
+      // 最后一张图片为SWITCH
+      else if (selectedIndex === selectedImagesToRename.length - 1) {
+        typeName = 'SWITCH';
+      } 
+      // 中间图片为PT01到PT08
+      else {
+        const ptIndex = selectedIndex;
+        typeName = `PT${String(ptIndex).padStart(2, '0')}`;
+      }
+      
+      // 获取文件扩展名（优先使用已有的displayName，否则使用原始文件名）
+      const sourceFileName = image.file.displayName || image.file.name;
+      
+      // 改进的扩展名提取方法
+      let fileExt = '';
+      const lastDotIndex = sourceFileName.lastIndexOf('.');
+      if (lastDotIndex !== -1 && lastDotIndex > sourceFileName.lastIndexOf('/') && lastDotIndex > sourceFileName.lastIndexOf('\\')) {
+        fileExt = sourceFileName.substring(lastDotIndex);
+      }
+      
+      // 创建新名称
+      const newDisplayName = `${prefix}.${typeName}${fileExt}`;
+      
+      // 创建新的图片对象
+      return {
+        ...image,
+        id: `renamed-${image.id}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, // 确保ID唯一
+        file: {
+          ...image.file,
+          displayName: newDisplayName
+        },
+        isRenamed: true,
+        originalImageId: image.id,
+        prefix: prefix, // 保存使用的前缀
+        applyTime: new Date().toLocaleString() // 保存应用时间，便于识别
+      } as ImageFile;
+    });
+    
+    // 更新重命名图片
+    const updatedRenamedImages = [...renamedImages, ...newRenamedImages];
+    setRenamedImages(updatedRenamedImages);
+    saveRenamedImagesToStorage(updatedRenamedImages);
+    
+    // 状态更新后立即重置选择
+    gridRef.current?.resetSelection();
+    
+  }, [prefix, images, renamedImages, saveRenamedImagesToStorage]);
+
+  // 修改clearRenamedImages函数，清除localStorage
+  const clearRenamedImages = useCallback(() => {
+    if (renamedImages.length === 0) return;
+    
+    // 释放预览URL
+    renamedImages.forEach(image => {
+      if (image && image.preview) URL.revokeObjectURL(image.preview);
+    });
+    
+    setRenamedImages([]);
+    localStorage.removeItem('savedRenamedImages');
+  }, [renamedImages]);
+
+  // 从localStorage加载图片数据的useEffect
+  useEffect(() => {
+    loadImagesFromStorage();
+  }, [loadImagesFromStorage]);
 
   // 将图片URL转换为Blob对象
   const urlToBlob = async (url: string): Promise<Blob> => {
@@ -198,76 +374,34 @@ export default function Home() {
     }
   }, [images, prefix]);
 
-  // 应用前缀到选中的图片
-  const applyPrefix = useCallback(() => {
-    if (selectedImagesRef.current.length === 0 || !prefix.trim()) return;
+  // 下载排序结果
+  const downloadOrder = useCallback(() => {
+    if (images.length === 0) return;
     
-    // 保存当前选中的图片ID，因为之后会重置选择状态
-    const selectedIds = [...selectedImagesRef.current];
-    
-    // 获取选中图片及其选中顺序
-    const selectedImagesToRename: Array<ImageFile & {selectionIndex: number}> = [];
-    images.forEach(image => {
-      if (selectedIds.includes(image.id)) {
-        const index = selectedIds.indexOf(image.id);
-        selectedImagesToRename.push({...image, selectionIndex: index});
-      }
-    });
-    
-    // 为选中图片创建重命名副本
-    const newRenamedImages = selectedImagesToRename.map(image => {
-      const selectedIndex = image.selectionIndex;
-      let typeName = '';
-      
-      // 第一张图片为MAIN
-      if (selectedIndex === 0) {
-        typeName = 'MAIN';
-      } 
-      // 最后一张图片为SWITCH
-      else if (selectedIndex === selectedImagesToRename.length - 1) {
-        typeName = 'SWITCH';
-      } 
-      // 中间图片为PT01到PT08
-      else {
-        const ptIndex = selectedIndex;
-        typeName = `PT${String(ptIndex).padStart(2, '0')}`;
+    // 创建文件名列表的文本
+    const fileNames = images.map((image, index) => {
+      // 如果已有显示名称，则使用它
+      if (image.file.displayName) {
+        return `${index + 1}. ${image.file.displayName}`;
       }
       
-      // 获取文件扩展名（优先使用已有的displayName，否则使用原始文件名）
-      const sourceFileName = image.file.displayName || image.file.name;
-      
-      // 改进的扩展名提取方法
-      let fileExt = '';
-      const lastDotIndex = sourceFileName.lastIndexOf('.');
-      if (lastDotIndex !== -1 && lastDotIndex > sourceFileName.lastIndexOf('/') && lastDotIndex > sourceFileName.lastIndexOf('\\')) {
-        fileExt = sourceFileName.substring(lastDotIndex);
-      }
-      
-      // 创建新名称
-      const newDisplayName = `${prefix}.${typeName}${fileExt}`;
-      
-      // 创建新的图片对象
-      return {
-        ...image,
-        id: `renamed-${image.id}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, // 确保ID唯一
-        file: {
-          ...image.file,
-          displayName: newDisplayName
-        },
-        isRenamed: true,
-        originalImageId: image.id,
-        prefix: prefix, // 保存使用的前缀
-        applyTime: new Date().toLocaleString() // 保存应用时间，便于识别
-      } as ImageFile;
-    });
+      // 否则使用原始名称
+      return `${index + 1}. ${image.file.name}`;
+    }).join('\n');
     
-    // 在现有重命名图片基础上添加新的图片，而不是替换
-    setRenamedImages(prevRenamedImages => [...prevRenamedImages, ...newRenamedImages]);
+    // 创建blob并下载
+    const blob = new Blob([fileNames], { type: 'text/plain' });
+    const href = URL.createObjectURL(blob);
     
-    // 状态更新后立即重置选择
-    gridRef.current?.resetSelection();
+    const link = document.createElement('a');
+    link.href = href;
+    link.download = 'image-order.txt';
+    document.body.appendChild(link);
+    link.click();
     
-  }, [prefix, images]);
+    document.body.removeChild(link);
+    URL.revokeObjectURL(href);
+  }, [images]);
 
   // 下载重命名后的图片
   const downloadRenamedImages = useCallback(async () => {
@@ -333,17 +467,16 @@ export default function Home() {
     }
   }, [renamedImages, prefix]);
 
-  // 清除重命名的图片
-  const clearRenamedImages = useCallback(() => {
-    if (renamedImages.length === 0) return;
+  // 修复类型错误
+  const handleImageOrderChange = useCallback((newImages: ImageFile[] | ((prevState: ImageFile[]) => ImageFile[])) => {
+    // 处理函数调用
+    const updatedImages = typeof newImages === 'function' 
+      ? newImages(images) 
+      : newImages;
     
-    // 释放预览URL
-    renamedImages.forEach(image => {
-      if (image && image.preview) URL.revokeObjectURL(image.preview);
-    });
-    
-    setRenamedImages([]);
-  }, [renamedImages]);
+    setImages(updatedImages);
+    saveImagesToStorage(updatedImages);
+  }, [images, saveImagesToStorage]);
 
   // 下载特定组的重命名图片
   const downloadGroupImages = useCallback(async (groupImages: ImageFile[]) => {
@@ -732,7 +865,7 @@ export default function Home() {
             <SortableImageGrid 
               ref={gridRef}
               images={images} 
-              setImages={setImages} 
+              setImages={handleImageOrderChange} 
               onSelectedChange={handleSelectedImagesChange}
             />
             
