@@ -1193,4 +1193,14 @@ ul.workflows {
   background-color: #ffcdd2;
   padding: 2px 4px;
   border-radius: 3px;
+}
+
+/* 失效图片样式 */
+.image-item.invalid {
+  border: 2px dashed #f44336;
+  background-color: #ffebee;
+}
+
+.image-item.invalid img {
+  opacity: 0.5;
 } 

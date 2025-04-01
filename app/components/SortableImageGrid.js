@@ -4,7 +4,7 @@ import { useRef, useState, useCallback, useEffect, useImperativeHandle, forwardR
 import { useDrag, useDrop } from 'react-dnd';
 
 // 拖拽项组件
-function DraggableImage({ image, index, moveImage, isSelected, selectionIndex, onToggleSelect }) {
+function DraggableImage({ image, index, moveImage, isSelected, selectionIndex, onToggleSelect, onImageError }) {
   const ref = useRef(null);
   
   const [{ isDragging }, drag] = useDrag({
@@ -86,6 +86,7 @@ function DraggableImage({ image, index, moveImage, isSelected, selectionIndex, o
       <img 
         src={image.preview} 
         alt={`Preview ${index}`} 
+        onError={onImageError}
       />
       {isSelected && (
         <div className="selected-indicator">
@@ -100,7 +101,7 @@ function DraggableImage({ image, index, moveImage, isSelected, selectionIndex, o
 }
 
 // 主图片网格组件
-const SortableImageGrid = forwardRef(({ images, setImages, onSelectedChange }, ref) => {
+const SortableImageGrid = forwardRef(({ images, setImages, onSelectedChange, onImageError }, ref) => {
   // 使用Map存储选中的图片和它们的选中顺序
   const [selectedImageMap, setSelectedImageMap] = useState(new Map());
 
@@ -179,6 +180,7 @@ const SortableImageGrid = forwardRef(({ images, setImages, onSelectedChange }, r
           isSelected={selectedImageMap.has(image.id)}
           selectionIndex={selectedImageMap.get(image.id)}
           onToggleSelect={handleToggleSelect}
+          onImageError={onImageError}
         />
       ))}
     </div>
