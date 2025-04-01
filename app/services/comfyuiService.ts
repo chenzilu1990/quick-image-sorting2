@@ -81,9 +81,14 @@ const requestDirectoryAccess = async (path: string): Promise<boolean> => {
 // 保存ComfyUI配置
 const saveConfig = async (config: ComfyUIConfig): Promise<boolean> => {
   try {
-    // 如果设置了工作流路径，始终请求目录访问权限
-    if (config.workflowsPath && config.workflowsPath.trim() !== '') {
-      console.log('正在请求目录访问权限:', config.workflowsPath);
+    // 获取旧配置
+    const oldConfig = getConfig();
+    
+    // 只有在工作流路径发生变化或首次设置时，才请求目录访问权限
+    if (config.workflowsPath && 
+        config.workflowsPath.trim() !== '' && 
+        config.workflowsPath !== oldConfig.workflowsPath) {
+      console.log('工作流路径已更改，正在请求目录访问权限:', config.workflowsPath);
       // 请求目录访问权限
       const accessGranted = await requestDirectoryAccess(config.workflowsPath);
       if (!accessGranted) {
@@ -91,6 +96,8 @@ const saveConfig = async (config: ComfyUIConfig): Promise<boolean> => {
       } else {
         console.log('成功获取目录访问权限');
       }
+    } else {
+      console.log('仅更新服务器URL或其他设置，无需重新请求目录权限');
     }
     
     localStorage.setItem('comfyUIConfig', JSON.stringify(config));

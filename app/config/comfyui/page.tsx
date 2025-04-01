@@ -19,6 +19,8 @@ export default function ComfyUIConfig() {
   const [saveMessage, setSaveMessage] = useState<string>('');
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus | null>(null);
   const [isTesting, setIsTesting] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [configChanged, setConfigChanged] = useState<boolean>(false);
   
   // 从localStorage加载配置
   useEffect(() => {
@@ -26,6 +28,7 @@ export default function ComfyUIConfig() {
       const config = comfyUIService.getConfig();
       setServerUrl(config.serverUrl || 'http://localhost:8088');
       setWorkflowsPath(config.workflowsPath || '');
+      setConfigChanged(false);
     } catch (error) {
       console.error('加载ComfyUI配置出错:', error);
     }
@@ -33,6 +36,8 @@ export default function ComfyUIConfig() {
   
   // 保存配置
   const saveConfig = async () => {
+    if (!configChanged) return;
+    
     try {
       const config: ComfyUIConfig = {
         serverUrl,
@@ -41,12 +46,14 @@ export default function ComfyUIConfig() {
       };
       
       // 在保存前设置"保存中"状态
+      setIsSaving(true);
       setSaveMessage('正在保存...');
       
       const saved = await comfyUIService.saveConfig(config);
       
       if (saved) {
-        setSaveMessage('配置已保存，并已请求工作流文件夹访问权限');
+        setSaveMessage('配置已自动保存，并已请求工作流文件夹访问权限');
+        setConfigChanged(false);
       } else {
         setSaveMessage('保存失败，请重试');
       }
@@ -61,6 +68,27 @@ export default function ComfyUIConfig() {
       setTimeout(() => {
         setSaveMessage('');
       }, 3000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  
+  // 处理服务器URL变更 - 仅更新状态，不立即保存
+  const handleServerUrlChange = (value: string) => {
+    setServerUrl(value);
+    setConfigChanged(true);
+  };
+  
+  // 处理工作流路径变更 - 仅更新状态，不立即保存
+  const handleWorkflowsPathChange = (value: string) => {
+    setWorkflowsPath(value);
+    setConfigChanged(true);
+  };
+  
+  // 处理输入框失去焦点时保存
+  const handleInputBlur = () => {
+    if (configChanged) {
+      saveConfig();
     }
   };
   
@@ -68,6 +96,11 @@ export default function ComfyUIConfig() {
   const testConnection = async () => {
     setIsTesting(true);
     setConnectionStatus(null);
+    
+    // 如果配置有改变，先保存
+    if (configChanged) {
+      await saveConfig();
+    }
     
     try {
       const result = await comfyUIService.checkConnection();
@@ -103,7 +136,8 @@ export default function ComfyUIConfig() {
           <input
             type="text"
             value={serverUrl}
-            onChange={(e) => setServerUrl(e.target.value)}
+            onChange={(e) => handleServerUrlChange(e.target.value)}
+            onBlur={handleInputBlur}
             placeholder="http://localhost:8088"
           />
           <p className="input-help">
@@ -116,13 +150,14 @@ export default function ComfyUIConfig() {
           <input
             type="text"
             value={workflowsPath}
-            onChange={(e) => setWorkflowsPath(e.target.value)}
+            onChange={(e) => handleWorkflowsPathChange(e.target.value)}
+            onBlur={handleInputBlur}
             placeholder="workflows"
           />
           <p className="input-help">
             输入您本地电脑上存储ComfyUI工作流的文件夹名称或描述性标识。在保存配置时，系统会立即弹出文件选择器让您
             选择实际的工作流文件夹。您只需授权一次，系统将保存该文件夹访问权限，以后可以直接读取该文件夹下的所有工作流文件，
-            无需再次选择文件夹。
+            无需再次选择文件夹。只有当您修改工作流路径时才会重新申请访问权限，修改服务器地址不会触发权限申请。
           </p>
         </div>
         
@@ -141,7 +176,7 @@ export default function ComfyUIConfig() {
           <button
             onClick={testConnection}
             className="test-button"
-            disabled={isTesting}
+            disabled={isTesting || isSaving}
           >
             {isTesting ? '测试中...' : '测试连接'}
           </button>
@@ -152,18 +187,23 @@ export default function ComfyUIConfig() {
           >
             打开ComfyUI
           </button>
-          
-          <button
-            onClick={saveConfig}
-            className="save-button"
-          >
-            保存配置
-          </button>
         </div>
         
         {saveMessage && (
-          <div className={`save-message ${saveMessage.includes('成功') ? 'success' : 'error'}`}>
+          <div className={`save-message ${saveMessage.includes('成功') || saveMessage.includes('保存') ? 'success' : 'error'}`}>
             {saveMessage}
+          </div>
+        )}
+        
+        {configChanged && (
+          <div className="config-changed-indicator">
+            配置已更改，失去焦点时将自动保存
+          </div>
+        )}
+        
+        {isSaving && (
+          <div className="config-changed-indicator saving-indicator">
+            正在自动保存...
           </div>
         )}
         

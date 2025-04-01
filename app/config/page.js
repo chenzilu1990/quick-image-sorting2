@@ -20,6 +20,7 @@ export default function Config() {
   // 状态提示
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const [configChanged, setConfigChanged] = useState(false);
   
   // 从localStorage加载配置
   useEffect(() => {
@@ -52,28 +53,37 @@ export default function Config() {
   }, []);
   
   // 保存配置到localStorage
-  const saveConfig = () => {
+  const saveConfig = (updatedValues = {}) => {
     setIsSaving(true);
     
     try {
+      // 合并当前状态和传入的更新值
+      const updatedGithubToken = updatedValues.githubToken !== undefined ? updatedValues.githubToken : githubToken;
+      const updatedGithubRepo = updatedValues.githubRepo !== undefined ? updatedValues.githubRepo : githubRepo;
+      const updatedGithubOwner = updatedValues.githubOwner !== undefined ? updatedValues.githubOwner : githubOwner;
+      const updatedCustomApiUrl = updatedValues.customApiUrl !== undefined ? updatedValues.customApiUrl : customApiUrl;
+      const updatedCustomApiKey = updatedValues.customApiKey !== undefined ? updatedValues.customApiKey : customApiKey;
+      const updatedSelectedService = updatedValues.selectedService !== undefined ? updatedValues.selectedService : selectedService;
+      
       const config = {
-        selectedService,
+        selectedService: updatedSelectedService,
         github: {
-          token: githubToken,
-          repo: githubRepo,
-          owner: githubOwner
+          token: updatedGithubToken,
+          repo: updatedGithubRepo,
+          owner: updatedGithubOwner
         },
         customServer: {
-          apiUrl: customApiUrl,
-          apiKey: customApiKey
+          apiUrl: updatedCustomApiUrl,
+          apiKey: updatedCustomApiKey
         },
         lastUpdated: new Date().toISOString()
       };
       
       localStorage.setItem('imageUploaderConfig', JSON.stringify(config));
       
-      setSaveMessage('配置已保存');
-      setTimeout(() => setSaveMessage(''), 3000);
+      setSaveMessage('配置已自动保存');
+      setConfigChanged(false);
+      setTimeout(() => setSaveMessage(''), 1500);
     } catch (error) {
       console.error('保存配置出错:', error);
       setSaveMessage('保存失败，请重试');
@@ -82,6 +92,46 @@ export default function Config() {
     }
   };
   
+  // 处理服务类型变更 - 直接变更时保存
+  const handleServiceChange = (service) => {
+    setSelectedService(service);
+    saveConfig({ selectedService: service });
+  };
+  
+  // 处理GitHub配置变更 - 仅存储状态，不立即保存
+  const handleGithubTokenChange = (value) => {
+    setGithubToken(value);
+    setConfigChanged(true);
+  };
+  
+  const handleGithubRepoChange = (value) => {
+    setGithubRepo(value);
+    setConfigChanged(true);
+  };
+  
+  const handleGithubOwnerChange = (value) => {
+    setGithubOwner(value);
+    setConfigChanged(true);
+  };
+  
+  // 处理自定义服务器配置变更 - 仅存储状态，不立即保存
+  const handleCustomApiUrlChange = (value) => {
+    setCustomApiUrl(value);
+    setConfigChanged(true);
+  };
+  
+  const handleCustomApiKeyChange = (value) => {
+    setCustomApiKey(value);
+    setConfigChanged(true);
+  };
+  
+  // 处理输入框失去焦点时保存
+  const handleInputBlur = () => {
+    if (configChanged) {
+      saveConfig();
+    }
+  };
+
   // 测试连接
   const testConnection = async () => {
     setIsSaving(true);
@@ -153,7 +203,7 @@ export default function Config() {
                 name="service"
                 value="github"
                 checked={selectedService === 'github'}
-                onChange={() => setSelectedService('github')}
+                onChange={() => handleServiceChange('github')}
               />
               <span className="service-name">GitHub</span>
               <span className="service-description">将图片上传至GitHub仓库</span>
@@ -165,7 +215,7 @@ export default function Config() {
                 name="service"
                 value="custom"
                 checked={selectedService === 'custom'}
-                onChange={() => setSelectedService('custom')}
+                onChange={() => handleServiceChange('custom')}
               />
               <span className="service-name">自定义服务器</span>
               <span className="service-description">上传到自定义API端点</span>
@@ -182,8 +232,9 @@ export default function Config() {
               <input
                 type="password"
                 value={githubToken}
-                onChange={(e) => setGithubToken(e.target.value)}
+                onChange={(e) => handleGithubTokenChange(e.target.value)}
                 placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                onBlur={handleInputBlur}
               />
               <p className="input-help">
                 需要有repo权限的GitHub令牌。
@@ -198,8 +249,9 @@ export default function Config() {
               <input
                 type="text"
                 value={githubOwner}
-                onChange={(e) => setGithubOwner(e.target.value)}
+                onChange={(e) => handleGithubOwnerChange(e.target.value)}
                 placeholder="你的GitHub用户名"
+                onBlur={handleInputBlur}
               />
             </div>
             
@@ -208,8 +260,9 @@ export default function Config() {
               <input
                 type="text"
                 value={githubRepo}
-                onChange={(e) => setGithubRepo(e.target.value)}
+                onChange={(e) => handleGithubRepoChange(e.target.value)}
                 placeholder="例如: my-images"
+                onBlur={handleInputBlur}
               />
             </div>
             
@@ -231,8 +284,9 @@ export default function Config() {
               <input
                 type="text"
                 value={customApiUrl}
-                onChange={(e) => setCustomApiUrl(e.target.value)}
+                onChange={(e) => handleCustomApiUrlChange(e.target.value)}
                 placeholder="https://example.com/api/upload"
+                onBlur={handleInputBlur}
               />
               <p className="input-help">接收图片上传的API地址</p>
             </div>
@@ -242,11 +296,30 @@ export default function Config() {
               <input
                 type="password"
                 value={customApiKey}
-                onChange={(e) => setCustomApiKey(e.target.value)}
+                onChange={(e) => handleCustomApiKeyChange(e.target.value)}
                 placeholder="你的API密钥"
+                onBlur={handleInputBlur}
               />
               <p className="input-help">如果API需要认证，请提供密钥</p>
             </div>
+          </div>
+        )}
+        
+        {saveMessage && (
+          <div className={`save-message ${saveMessage.includes('成功') ? 'success' : 'error'}`}>
+            {saveMessage}
+          </div>
+        )}
+        
+        {configChanged && !isSaving && (
+          <div className="config-changed-indicator">
+            配置已更改，失去焦点时将自动保存
+          </div>
+        )}
+        
+        {isSaving && (
+          <div className="config-changed-indicator saving-indicator">
+            正在自动保存...
           </div>
         )}
         
@@ -256,23 +329,9 @@ export default function Config() {
             className="test-button"
             disabled={isSaving}
           >
-            测试连接
-          </button>
-          
-          <button
-            onClick={saveConfig}
-            className="save-button"
-            disabled={isSaving}
-          >
-            {isSaving ? '保存中...' : '保存配置'}
+            {isSaving && saveMessage.includes('测试') ? '测试中...' : '测试连接'}
           </button>
         </div>
-        
-        {saveMessage && (
-          <div className={`save-message ${saveMessage.includes('成功') ? 'success' : 'error'}`}>
-            {saveMessage}
-          </div>
-        )}
       </div>
     </main>
   );
