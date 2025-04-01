@@ -11,7 +11,8 @@ const getConfig = (): ComfyUIConfig => {
     if (typeof window === 'undefined') {
       return {
         serverUrl: 'http://localhost:8088',
-        defaultWorkflow: ''
+        defaultWorkflow: '',
+        workflowsPath: ''
       };
     }
     
@@ -19,7 +20,8 @@ const getConfig = (): ComfyUIConfig => {
     if (!savedConfig) {
       return {
         serverUrl: 'http://localhost:8088',
-        defaultWorkflow: ''
+        defaultWorkflow: '',
+        workflowsPath: ''
       };
     }
     return JSON.parse(savedConfig) as ComfyUIConfig;
@@ -27,14 +29,70 @@ const getConfig = (): ComfyUIConfig => {
     console.error('获取ComfyUI配置出错:', error);
     return {
       serverUrl: 'http://localhost:8088',
-      defaultWorkflow: ''
+      defaultWorkflow: '',
+      workflowsPath: ''
     };
   }
 };
 
-// 保存ComfyUI配置
-const saveConfig = (config: ComfyUIConfig): boolean => {
+// 检查文件系统API是否可用
+const isFileSystemAPIAvailable = (): boolean => {
+  return 'showDirectoryPicker' in window;
+};
+
+// 请求目录访问权限
+const requestDirectoryAccess = async (path: string): Promise<boolean> => {
   try {
+    if (!path || path.trim() === '') {
+      return false;
+    }
+    
+    console.log('请求文件系统访问权限...');
+    
+    // 检查API是否可用
+    if (!isFileSystemAPIAvailable()) {
+      console.warn('File System Access API不可用，使用备用方法');
+      alert('您的浏览器不支持直接访问文件系统，请使用Chrome/Edge等现代浏览器。');
+      return false;
+    }
+    
+    try {
+      // 请求文件系统访问权限
+      directoryHandle = await (window as unknown as WindowWithFileSystem).showDirectoryPicker({
+        id: 'comfyui-workflows-' + Date.now(), // 添加时间戳确保每次请求都是唯一的
+        mode: 'read'
+        // 移除startIn参数，允许用户从任何位置开始选择
+      });
+      
+      console.log('文件选择器已显示');
+      return !!directoryHandle;
+    } catch (pickerError) {
+      console.error('文件选择器错误:', pickerError);
+      // 尝试替代方案
+      alert('请选择工作流文件夹');
+      return false;
+    }
+  } catch (error) {
+    console.error('请求目录访问权限失败:', error);
+    return false;
+  }
+};
+
+// 保存ComfyUI配置
+const saveConfig = async (config: ComfyUIConfig): Promise<boolean> => {
+  try {
+    // 如果设置了工作流路径，始终请求目录访问权限
+    if (config.workflowsPath && config.workflowsPath.trim() !== '') {
+      console.log('正在请求目录访问权限:', config.workflowsPath);
+      // 请求目录访问权限
+      const accessGranted = await requestDirectoryAccess(config.workflowsPath);
+      if (!accessGranted) {
+        console.warn('未获得目录访问权限，但仍会保存配置');
+      } else {
+        console.log('成功获取目录访问权限');
+      }
+    }
+    
     localStorage.setItem('comfyUIConfig', JSON.stringify(config));
     return true;
   } catch (error) {
@@ -81,37 +139,138 @@ const checkConnection = async (): Promise<ConnectionResult> => {
   }
 };
 
+// 扩展Window接口以支持File System Access API
+interface FileSystemDirectoryHandle {
+  kind: 'directory';
+  name: string;
+  values(): AsyncIterable<FileSystemHandle>;
+  getFileHandle(name: string): Promise<FileSystemFileHandle>;
+}
+
+interface FileSystemFileHandle {
+  kind: 'file';
+  name: string;
+  getFile(): Promise<File>;
+}
+
+type FileSystemHandle = FileSystemDirectoryHandle | FileSystemFileHandle;
+
+// 扩展Window接口
+interface WindowWithFileSystem extends Window {
+  showDirectoryPicker(options?: {
+    id?: string;
+    mode?: 'read' | 'readwrite';
+    startIn?: 'desktop' | 'documents' | 'downloads' | 'music' | 'pictures' | 'videos';
+  }): Promise<FileSystemDirectoryHandle>;
+}
+
+// 存储目录句柄的变量
+let directoryHandle: FileSystemDirectoryHandle | null = null;
+
 // 获取可用的工作流列表
 const getWorkflows = async (): Promise<Workflow[]> => {
   try {
     const config = getConfig();
-    const response = await fetch(`${config.serverUrl}/history`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
     
-    if (!response.ok) {
-      throw new Error(`获取工作流失败: ${response.status} ${response.statusText}`);
+    // 如果未设置工作流路径，返回空数组
+    if (!config.workflowsPath || config.workflowsPath.trim() === '') {
+      console.log('未设置工作流文件夹路径');
+      return [];
     }
     
-    const data = await response.json();
-    
-    // 转换为更易用的格式
-    const workflows = Object.entries(data)
-      .map(([id, info]: [string, any]) => ({
-        id,
-        timestamp: info.timestamp || Date.now() / 1000,
-        name: info.prompt?.extra?.name || `工作流 ${id.substring(0, 8)}`
-      }))
-      .sort((a, b) => b.timestamp - a.timestamp);
-    
-    return workflows;
+    try {
+      // 如果之前已经获取了目录句柄，直接使用它
+      if (!directoryHandle) {
+        // 如果没有目录句柄，尝试请求权限
+        const accessGranted = await requestDirectoryAccess(config.workflowsPath);
+        if (!accessGranted) {
+          throw new Error('未获得目录访问权限');
+        }
+      }
+      
+      // 读取目录中的所有文件
+      const workflows: Workflow[] = [];
+      
+      // 使用递归函数搜索目录及其子目录中的所有JSON文件
+      const readDirectoryContents = async (dirHandle: FileSystemDirectoryHandle, path = '') => {
+        for await (const entry of dirHandle.values()) {
+          const entryPath = path ? `${path}/${entry.name}` : entry.name;
+          
+          if (entry.kind === 'directory') {
+            // 递归读取子目录
+            await readDirectoryContents(entry, entryPath);
+          } else if (entry.kind === 'file' && entry.name.toLowerCase().endsWith('.json')) {
+            try {
+              // 获取文件句柄
+              const fileHandle = await dirHandle.getFileHandle(entry.name);
+              // 获取文件对象
+              const file = await fileHandle.getFile();
+              // 读取文件内容
+              const content = await readFileAsText(file);
+              const workflow = JSON.parse(content);
+              
+              // 提取工作流信息
+              const id = file.name.replace(/\.json$/, '');
+              const timestamp = file.lastModified / 1000;
+              let name = id;
+              
+              // 尝试从工作流内容中提取名称
+              if (workflow.prompt && workflow.prompt.extra && workflow.prompt.extra.name) {
+                name = workflow.prompt.extra.name;
+              } else {
+                // 使用文件名作为工作流名称
+                name = file.name.replace(/\.json$/, '');
+              }
+              
+              workflows.push({
+                id,
+                name,
+                timestamp,
+                filePath: entryPath,
+                fileContent: content
+              });
+            } catch (error) {
+              console.error(`读取工作流文件出错: ${entry.name}`, error);
+            }
+          }
+        }
+      };
+      
+      // 开始读取目录
+      if (directoryHandle) {
+        await readDirectoryContents(directoryHandle);
+      }
+      
+      // 按修改时间排序，最新的排在前面
+      workflows.sort((a, b) => b.timestamp - a.timestamp);
+      
+      return workflows;
+    } catch (error) {
+      // 如果用户取消了选择或发生错误，重置目录句柄并返回空数组
+      console.error('读取目录失败:', error);
+      directoryHandle = null;
+      return [];
+    }
   } catch (error) {
-    console.error('获取工作流列表出错:', error);
+    console.error('获取本地工作流列表出错:', error);
     return [];
   }
+};
+
+// 读取文件内容为文本
+const readFileAsText = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target && typeof event.target.result === 'string') {
+        resolve(event.target.result);
+      } else {
+        reject(new Error('读取文件失败'));
+      }
+    };
+    reader.onerror = () => reject(new Error('读取文件失败'));
+    reader.readAsText(file);
+  });
 };
 
 interface ImageUploadResult {
@@ -194,11 +353,44 @@ const openComfyUIWithWorkflow = (workflowId: string | null = null): string => {
   return url;
 };
 
+// 发送JSON到ComfyUI
+const sendGraphDataToComfyUI = async (json: string, workflowId: string | null = null): Promise<boolean> => {
+  try {
+    const config = getConfig();
+    const url = `${config.serverUrl}/upload/workflow`;
+    const response = await fetch(url, {
+      method: 'POST',
+      body: json
+    });
+    
+    if (!response.ok) {
+      throw new Error(`上传工作流失败: ${response.status} ${response.statusText}`);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('发送工作流到ComfyUI出错:', error);
+    return false;
+  }
+};
+
+// 重置目录句柄并重新请求权限
+const resetDirectoryAccess = async (): Promise<boolean> => {
+  directoryHandle = null;
+  const config = getConfig();
+  if (config.workflowsPath) {
+    return await requestDirectoryAccess(config.workflowsPath);
+  }
+  return false;
+};
+
 export default {
   getConfig,
   saveConfig,
   checkConnection,
   getWorkflows,
   sendImageToComfyUI,
-  openComfyUIWithWorkflow
+  sendGraphDataToComfyUI,
+  openComfyUIWithWorkflow,
+  resetDirectoryAccess
 }; 

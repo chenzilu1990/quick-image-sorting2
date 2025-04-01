@@ -47,6 +47,7 @@ export interface ServerConfig {
 export interface ComfyUIConfig {
   serverUrl: string;
   defaultWorkflow: string;
+  workflowsPath: string;
 }
 
 // 工作流类型定义
@@ -54,4 +55,6 @@ export interface Workflow {
   id: string;
   name: string;
   timestamp: number;
+  filePath?: string;
+  fileContent?: string;
 } 

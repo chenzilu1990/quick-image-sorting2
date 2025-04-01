@@ -10,6 +10,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import Link from 'next/link';
 import uploadService from './services/uploadService';
 import comfyuiService from './services/comfyuiService';  // 导入ComfyUI服务
+import comfyUIMessageService from './services/comfyuiMessageService';  // 导入新的消息服务
 import type { ImageFile, Workflow } from '@/types';
 
 // 上传结果类型定义
@@ -537,7 +538,28 @@ export default function Home() {
     setCurrentEditingImage(null);
   };
 
-  // 用ComfyUI编辑图片
+  // 在组件挂载时设置消息处理器
+  useEffect(() => {
+    // 监听ComfyUI的状态更新
+    comfyUIMessageService.on('status', (data) => {
+      console.log('ComfyUI状态更新:', data);
+      // 这里可以更新UI显示处理状态
+    });
+
+    // 监听ComfyUI的错误
+    comfyUIMessageService.on('error', (data) => {
+      console.error('ComfyUI错误:', data);
+      alert(`ComfyUI处理出错: ${data.message}`);
+    });
+
+    // 组件卸载时清理
+    return () => {
+      comfyUIMessageService.off('status');
+      comfyUIMessageService.off('error');
+    };
+  }, []);
+
+  // 修改handleEditWithComfyUI函数
   const handleEditWithComfyUI = async () => {
     if (!currentEditingImage || !hasComfyUIConfig) return;
     
@@ -545,19 +567,41 @@ export default function Home() {
     closeWorkflowModal();
     
     try {
-      // 使用新的API通信方法，可选传递工作流ID
-      const result = await comfyuiService.sendImageToComfyUI(
-        currentEditingImage.preview,
-        currentEditingImage.file.displayName || currentEditingImage.file.name,
-        selectedWorkflow || null // 如果有选择工作流则传递
-      );
+      const config = comfyuiService.getConfig();
+      let comfyUIUrl = config.serverUrl;
       
-      if (result.success) {
-        // 提示成功
-        alert('图片已成功上传并在ComfyUI中打开。');
-      } else {
-        alert(`操作失败: ${result.message}`);
+      // 如果选择了工作流，添加到URL
+      if (selectedWorkflow) {
+        comfyUIUrl += `/?workflow=${encodeURIComponent(selectedWorkflow)}`;
       }
+      
+      // 使用消息服务打开ComfyUI窗口
+      const comfyUIWindow = comfyUIMessageService.openComfyUIWindow(comfyUIUrl);
+      
+      // 等待窗口加载完成
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // 发送图片数据到ComfyUI
+      comfyUIMessageService.sendMessage({
+        type: 'image',
+        data: {
+          url: currentEditingImage.preview,
+          name: currentEditingImage.file.displayName || currentEditingImage.file.name
+        }
+      });
+      
+      // 如果选择了工作流，发送工作流数据
+      if (selectedWorkflow) {
+        const selectedWorkflowObj = availableWorkflows.find(w => w.id === selectedWorkflow);
+        if (selectedWorkflowObj?.fileContent) {
+          comfyUIMessageService.sendMessage({
+            type: 'workflow',
+            data: JSON.parse(selectedWorkflowObj.fileContent)
+          });
+        }
+      }
+      
+      alert('图片和工作流已发送到ComfyUI，请在新窗口中查看');
     } catch (error: any) {
       console.error('编辑图片出错:', error);
       alert(`编辑图片出错: ${error.message || '未知错误'}`);
@@ -767,7 +811,6 @@ export default function Home() {
                 
                 {/* 按组显示重命名的图片 */}
                 {Array.from(
-                  // 按前缀和应用时间分组
                   renamedImages.reduce((groups, img) => {
                     const key = `${(img as any).prefix}-${(img as any).applyTime}`;
                     if (!groups.has(key)) {
@@ -777,10 +820,14 @@ export default function Home() {
                         images: []
                       });
                     }
-                    groups.get(key).images.push(img);
+                    // 添加非空检查
+                    const group = groups.get(key);
+                    if (group) {
+                      group.images.push(img);
+                    }
                     return groups;
                   }, new Map<string, {prefix: string, time: string, images: ImageFile[]}>())
-                ).map(([groupKey, group]) => (
+                ).map(([groupKey, group]: [string, {prefix: string, time: string, images: ImageFile[]}]) => (
                   <div key={groupKey} className="renamed-group">
                     <div className="renamed-group-header">
                       <div>
@@ -812,7 +859,7 @@ export default function Home() {
                     </div>
                     
                     <div className="renamed-images-grid">
-                      {group.images.map((image) => (
+                      {group.images.map((image: ImageFile) => (
                         <div key={image.id} className="renamed-image-item">
                           {uploadResults[groupKey] && (
                             <div className={`upload-status ${uploadResults[groupKey].status}`}>
@@ -911,4 +958,4 @@ export default function Home() {
       </main>
     </DndProvider>
   );
-} 
+}
