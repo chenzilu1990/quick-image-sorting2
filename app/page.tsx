@@ -601,7 +601,7 @@ export default function Home() {
         }
       }
       
-      alert('图片和工作流已发送到ComfyUI，请在新窗口中查看');
+      // alert('图片和工作流已发送到ComfyUI，请在新窗口中查看');
     } catch (error: any) {
       console.error('编辑图片出错:', error);
       alert(`编辑图片出错: ${error.message || '未知错误'}`);
