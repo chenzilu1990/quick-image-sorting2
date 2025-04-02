@@ -1,12 +1,23 @@
 'use client';
 
-import { useCallback, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useCallback, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { useDropzone } from 'react-dropzone';
+import type { ImageFile, SimpleFile } from '../types';
 
-const ImageDropzone = forwardRef(({ onImagesDrop }, ref) => {
-  const [isProcessing, setIsProcessing] = useState(false);
+// 组件引用类型
+export interface ImageDropzoneRef {
+  openFileDialog: () => void;
+}
 
-  const onDrop = useCallback((acceptedFiles) => {
+// 组件属性类型
+interface ImageDropzoneProps {
+  onImagesDrop: (images: ImageFile[]) => void;
+}
+
+const ImageDropzone = forwardRef<ImageDropzoneRef, ImageDropzoneProps>(({ onImagesDrop }, ref) => {
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+
+  const onDrop = useCallback((acceptedFiles: File[]) => {
     if (!acceptedFiles || !Array.isArray(acceptedFiles) || acceptedFiles.length === 0) return;
     
     setIsProcessing(true);
@@ -23,11 +34,23 @@ const ImageDropzone = forwardRef(({ onImagesDrop }, ref) => {
       }
       
       // 为每个文件创建预览URL
-      const imagesWithPreview = imageFiles.map(file => ({
-        file,
-        id: `${file.name}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        preview: URL.createObjectURL(file)
-      }));
+      const imagesWithPreview = imageFiles.map(file => {
+        // 提取文件所需的属性
+        const simpleFile: SimpleFile = {
+          name: file.name,
+          size: file.size,
+          type: file.type
+        };
+        
+        // 创建符合ImageFile类型的对象
+        const imageFile: ImageFile = {
+          id: `${file.name}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+          preview: URL.createObjectURL(file),
+          file: simpleFile
+        };
+        
+        return imageFile;
+      });
       
       if (typeof onImagesDrop === 'function') {
         onImagesDrop(imagesWithPreview);
@@ -56,13 +79,13 @@ const ImageDropzone = forwardRef(({ onImagesDrop }, ref) => {
 
   // 为整个页面添加拖拽监听
   useEffect(() => {
-    const handlePageDragOver = (e) => {
+    const handlePageDragOver = (e: DragEvent) => {
       e.preventDefault(); // 防止浏览器默认行为
       e.stopPropagation();
       document.body.classList.add('drag-active');
     };
 
-    const handlePageDragLeave = (e) => {
+    const handlePageDragLeave = (e: DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
       
@@ -72,7 +95,7 @@ const ImageDropzone = forwardRef(({ onImagesDrop }, ref) => {
       }
     };
 
-    const handlePageDrop = (e) => {
+    const handlePageDrop = (e: DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
       document.body.classList.remove('drag-active');
@@ -87,7 +110,6 @@ const ImageDropzone = forwardRef(({ onImagesDrop }, ref) => {
     document.addEventListener('dragover', handlePageDragOver);
     document.addEventListener('dragleave', handlePageDragLeave);
     document.addEventListener('drop', handlePageDrop);
-    // document.addEventListener('dblclick', open);
     
     // 点击提示区域时打开文件选择对话框
     const dropzoneInfo = document.querySelector('.dropzone-info');
@@ -100,7 +122,6 @@ const ImageDropzone = forwardRef(({ onImagesDrop }, ref) => {
         document.removeEventListener('dragover', handlePageDragOver);
         document.removeEventListener('dragleave', handlePageDragLeave);
         document.removeEventListener('drop', handlePageDrop);
-        // document.removeEventListener('dblclick', open);
       
       if (dropzoneInfo) {
         dropzoneInfo.removeEventListener('click', open);

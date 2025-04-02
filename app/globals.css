@@ -108,9 +108,25 @@ button:disabled {
 }
 
 .empty-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  margin: 50px 0;
   text-align: center;
   color: #666;
-  margin-top: 2rem;
+}
+
+.empty-illustration {
+  margin: 20px 0;
+  opacity: 0.7;
+}
+
+.empty-help-text {
+  font-size: 14px;
+  color: #888;
+  margin-top: 10px;
 }
 
 .image-item.selected {

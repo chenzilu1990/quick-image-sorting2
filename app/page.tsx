@@ -3,15 +3,23 @@
 import { useState, useCallback, useRef, useEffect, MouseEvent, RefObject } from 'react';
 import ImageDropzone, { ImageDropzoneRef } from './components/ImageDropzone';
 import SortableImageGrid, { SortableImageGridRef } from './components/SortableImageGrid';
+import WorkflowModal from './components/WorkflowModal';
+import ImageGroupViewer from './components/ImageGroupViewer';
+import SelectedImagesPreview from './components/SelectedImagesPreview';
+import ActionButtons from './components/ActionButtons';
+import RenamedImageActions from './components/RenamedImageActions';
+import PrefixInputForm from './components/PrefixInputForm';
+import HeaderActions from './components/HeaderActions';
+import EmptyStateMessage from './components/EmptyStateMessage';
 import JSZip from 'jszip';
 import './globals.css';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import Link from 'next/link';
 import uploadService from './services/uploadService';
-import comfyuiService from './services/comfyuiService';  // 导入ComfyUI服务
-import comfyUIMessageService from './services/comfyuiMessageService';  // 导入新的消息服务
-import type { ImageFile, Workflow } from '@/types';
+import comfyuiService from './services/comfyuiService';
+import comfyUIMessageService from './services/comfyuiMessageService';
+import type { ImageFile, Workflow } from './types';
 
 // 上传结果类型定义
 interface UploadResult {
@@ -1005,46 +1013,25 @@ export default function Home() {
   return (
     <DndProvider backend={HTML5Backend}>
       <main>
-        {/* 添加配置页面链接 */}
-        <div className="header-actions">
-          <Link href="/config" className="config-link">
-            <span className="icon">⚙️</span> 图片上传配置
-          </Link>
-          <Link href="/config/comfyui" className="config-link">
-            <span className="icon">🎨</span> ComfyUI配置
-          </Link>
-        </div>
+        {/* 头部配置链接 */}
+        <HeaderActions />
         
-        {/* <h1>图片快速排序</h1> */}
+        {/* 前缀输入区域 */}
+        <PrefixInputForm 
+          prefix={prefix}
+          selectedCount={selectedCount}
+          onPrefixChange={setPrefix}
+          onApplyPrefix={applyPrefix}
+        />
         
-        {/* 固定在顶部的前缀输入区域 */}
-        {selectedCount > 0 && (
-          <div className="floating-prefix-form">
-            <input 
-              type="text" 
-              placeholder="输入前缀..." 
-              value={prefix}
-              onChange={(e) => setPrefix(e.target.value)}
-              className="prefix-input"
-            />
-            <button 
-              onClick={applyPrefix}
-              disabled={selectedCount === 0 || !prefix.trim()}
-              className="apply-button"
-            >
-              应用前缀
-            </button>
-          </div>
-        )}
-        
-        {/* 取消注释此段代码，恢复dropzone-info提示 */}
+        {/* 提示信息 */}
         {images.length === 0 && (
           <div className="dropzone-info">
             将图片拖放到页面任意位置，或双击页面任意位置选择图片
           </div>
         )}
         
-        {/* 隐藏的图片上传组件，但通过ref暴露方法给整个页面 */}
+        {/* 隐藏的图片上传组件 */}
         <div style={{ display: 'none' }}>
           <ImageDropzone 
             onImagesDrop={handleImagesDrop} 
@@ -1063,231 +1050,79 @@ export default function Home() {
             />
             
             {/* 选中图片预览区 */}
-            {selectedCount > 0 && (
-              <div className="selected-images-preview">
-                <div className="selected-images-header">
-                  <h3>已选择 {selectedCount} 张图片</h3>
-                </div>
-                <div className="selected-images-container">
-                  {images
-                    .filter(img => selectedImagesRef.current.includes(img.id))
-                    .map((image, idx) => {
-                      const sortedIndex = selectedImagesRef.current.indexOf(image.id);
-                      return (
-                        <div key={image.id} className="selected-thumbnail">
-                          <div className="selection-number">{sortedIndex + 1}</div>
-                          <img 
-                            src={image.preview} 
-                            alt={`选中图片 ${idx + 1}`} 
-                            onError={handleImageError}
-                          />
-                          <div className="selected-filename">{image.file.displayName || image.file.name}</div>
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-            )}
+            <SelectedImagesPreview 
+              selectedCount={selectedCount}
+              selectedImagesIds={selectedImagesRef.current}
+              images={images}
+              onImageError={handleImageError}
+            />
             
             {/* 工作流选择模态框 */}
             {showWorkflowModal && (
-              <div className="workflow-modal">
-                <div className="workflow-modal-content">
-                  <div className="workflow-modal-header">
-                    <h3>选择ComfyUI工作流</h3>
-                    <button className="close-modal-btn" onClick={closeWorkflowModal}>×</button>
-                  </div>
-                  
-                  {isLoadingWorkflows ? (
-                    <p className="loading-text">正在加载工作流列表...</p>
-                  ) : (
-                    availableWorkflows.length > 0 ? (
-                      <div className="workflow-select">
-                        <select
-                          value={selectedWorkflow}
-                          onChange={(e) => setSelectedWorkflow(e.target.value)}
-                        >
-                          <option value="">-- 使用默认工作流 --</option>
-                          {availableWorkflows.map(workflow => (
-                            <option key={workflow.id} value={workflow.id}>
-                              {workflow.name} ({new Date(workflow.timestamp * 1000).toLocaleString()})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    ) : (
-                      <p className="no-workflows">未找到可用的工作流，请先在ComfyUI中创建工作流</p>
-                    )
-                  )}
-                  
-                  <div className="workflow-modal-footer">
-                    <button onClick={closeWorkflowModal} className="cancel-btn">取消</button>
-                    <button 
-                      onClick={handleEditWithComfyUI} 
-                      className="proceed-btn"
-                      disabled={isLoadingWorkflows}
-                    >
-                      前往编辑
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <WorkflowModal
+                isLoading={isLoadingWorkflows}
+                availableWorkflows={availableWorkflows}
+                selectedWorkflow={selectedWorkflow}
+                onWorkflowSelect={(workflowId) => setSelectedWorkflow(workflowId)}
+                onClose={closeWorkflowModal}
+                onEditWithComfyUI={handleEditWithComfyUI}
+              />
             )}
             
             {/* 重命名后的图片展示区 */}
             {renamedImages.length > 0 && (
-              <div className="renamed-images-section">
-                <h3>已重命名的图片</h3>
+              <>
+                <ImageGroupViewer
+                  groups={Array.from(
+                    renamedImages.reduce((groups, img) => {
+                      const key = `${(img as any).prefix}-${(img as any).applyTime}`;
+                      if (!groups.has(key)) {
+                        groups.set(key, {
+                          prefix: (img as any).prefix,
+                          time: (img as any).applyTime,
+                          images: []
+                        });
+                      }
+                      // 添加非空检查
+                      const group = groups.get(key);
+                      if (group) {
+                        group.images.push(img);
+                      }
+                      return groups;
+                    }, new Map<string, {prefix: string, time: string, images: ImageFile[]}>())
+                  )}
+                  uploadResults={uploadResults}
+                  isDownloading={isDownloading}
+                  isUploading={isUploading}
+                  isProcessingComfyUI={isProcessingComfyUI}
+                  currentEditingImage={currentEditingImage}
+                  hasConfig={hasConfig}
+                  hasComfyUIConfig={hasComfyUIConfig}
+                  onDownloadGroup={downloadGroupImages}
+                  onUploadGroup={handleUploadGroup}
+                  onOpenWorkflowModal={openWorkflowModal}
+                  onImageError={handleImageError}
+                />
                 
-                {/* 按组显示重命名的图片 */}
-                {Array.from(
-                  renamedImages.reduce((groups, img) => {
-                    const key = `${(img as any).prefix}-${(img as any).applyTime}`;
-                    if (!groups.has(key)) {
-                      groups.set(key, {
-                        prefix: (img as any).prefix,
-                        time: (img as any).applyTime,
-                        images: []
-                      });
-                    }
-                    // 添加非空检查
-                    const group = groups.get(key);
-                    if (group) {
-                      group.images.push(img);
-                    }
-                    return groups;
-                  }, new Map<string, {prefix: string, time: string, images: ImageFile[]}>())
-                ).map(([groupKey, group]: [string, {prefix: string, time: string, images: ImageFile[]}]) => (
-                  <div key={groupKey} className="renamed-group">
-                    <div className="renamed-group-header">
-                      <div>
-                        <span className="renamed-group-prefix">{group.prefix}</span>
-                        <span className="renamed-group-time">({group.time})</span>
-                      </div>
-                      
-                      <div className="group-actions">
-                        <button 
-                          className="group-download-btn"
-                          onClick={() => downloadGroupImages(group.images)}
-                          disabled={isDownloading}
-                        >
-                          {isDownloading ? '下载中...' : '下载此组'}
-                        </button>
-                        
-                        <button 
-                          className="upload-group-btn"
-                          onClick={() => handleUploadGroup(groupKey, group.images)}
-                          disabled={isUploading || !hasConfig}
-                          title={!hasConfig ? '请先配置上传服务' : ''}
-                        >
-                          <span className="icon">☁️</span>
-                          {uploadResults[groupKey]?.status === 'uploading'
-                            ? '上传中...'
-                            : '上传到云'}
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div className="renamed-images-grid">
-                      {group.images.map((image: ImageFile) => (
-                        <div key={image.id} className="renamed-image-item">
-                          {uploadResults[groupKey] && (
-                            <div className={`upload-status ${uploadResults[groupKey].status}`}>
-                              <div className="upload-status-content">
-                                {uploadResults[groupKey].status === 'uploading' && '上传中...'}
-                                {uploadResults[groupKey].status === 'success' && '✓ 上传成功'}
-                                {uploadResults[groupKey].status === 'partial' && uploadResults[groupKey].message}
-                                {uploadResults[groupKey].status === 'error' && `✗ ${uploadResults[groupKey].message}`}
-                              </div>
-                            </div>
-                          )}
-                          
-                          {isProcessingComfyUI && currentEditingImage && currentEditingImage.id === image.id && (
-                            <div className="processing-indicator">
-                              <div className="spinner"></div>
-                              <div>正在处理...</div>
-                            </div>
-                          )}
-                          
-                          <img 
-                            src={image.preview} 
-                            alt={image.file.displayName || image.file.name} 
-                            onError={handleImageError}
-                          />
-                          <div className="renamed-filename">{image.file.displayName || image.file.name}</div>
-                          
-                          {/* 添加ComfyUI编辑按钮 */}
-                          <button 
-                            className="edit-comfyui-btn"
-                            onClick={() => openWorkflowModal(image)}
-                            disabled={!hasComfyUIConfig || isProcessingComfyUI}
-                            title={!hasComfyUIConfig ? '请先配置ComfyUI服务' : '使用ComfyUI编辑图片'}
-                          >
-                            <span className="icon">🎨</span> 使用ComfyUI编辑
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    {!hasConfig && (
-                      <div className="config-missing">
-                        上传功能需要先配置云服务。 
-                        <Link href="/config" className="config-link">
-                          <span>前往配置</span>
-                        </Link>
-                      </div>
-                    )}
-                    
-                    {!hasComfyUIConfig && (
-                      <div className="config-missing">
-                        编辑功能需要先配置ComfyUI。 
-                        <Link href="/config/comfyui" className="config-link">
-                          <span>前往配置</span>
-                        </Link>
-                      </div>
-                    )}
-                  </div>
-                ))}
-                
-                <div className="renamed-actions">
-                  <button 
-                    onClick={downloadRenamedImages}
-                    disabled={isDownloading}
-                  >
-                    {isDownloading ? '下载中...' : '下载所有重命名图片'}
-                  </button>
-                  
-                  <button onClick={clearRenamedImages}>
-                    清空重命名图片
-                  </button>
-                </div>
-              </div>
+                <RenamedImageActions 
+                  isDownloading={isDownloading}
+                  onDownloadRenamedImages={downloadRenamedImages}
+                  onClearRenamedImages={clearRenamedImages}
+                />
+              </>
             )}
             
-            <div className="actions">
-              <button onClick={clearImages}>
-                清空所有图片
-              </button>
-              <button onClick={deleteSelected}>
-                删除选中图片
-              </button>
-              <button onClick={downloadOrder}>
-                下载排序结果
-              </button>
-              {selectedCount > 0 && (
-                <button 
-                  onClick={downloadSelectedImages}
-                  disabled={selectedImagesRef.current.length === 0 || isDownloading}
-                >
-                  {isDownloading ? '下载中...' : `下载选中图片 (${selectedImagesRef.current.length})`}
-                </button>
-              )}
-            </div>
+            <ActionButtons
+              selectedCount={selectedCount}
+              isDownloading={isDownloading}
+              onClearImages={clearImages}
+              onDeleteSelected={deleteSelected}
+              onDownloadOrder={downloadOrder}
+              onDownloadSelected={downloadSelectedImages}
+            />
           </>
         ) : (
-          <div className="empty-message">
-            {/* <p>请拖拽或选择图片以开始排序</p> */}
-          </div>
+          <EmptyStateMessage />
         )}
       </main>
     </DndProvider>
