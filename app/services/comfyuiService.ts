@@ -1,4 +1,4 @@
-import { ComfyUIConfig, Workflow } from '@/types';
+import { ComfyUIConfig, Workflow } from '../types';
 
 /**
  * ComfyUI服务 - 直接API通信版

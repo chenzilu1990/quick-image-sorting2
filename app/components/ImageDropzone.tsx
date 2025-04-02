@@ -79,6 +79,7 @@ const ImageDropzone = forwardRef<ImageDropzoneRef, ImageDropzoneProps>(({ onImag
 
   // 为整个页面添加拖拽监听
   useEffect(() => {
+    console.trace('添加拖拽事件处理11111111111');
     const handlePageDragOver = (e: DragEvent) => {
       e.preventDefault(); // 防止浏览器默认行为
       e.stopPropagation();

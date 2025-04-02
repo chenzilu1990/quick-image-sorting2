@@ -1,4 +1,4 @@
-import { ImageFile } from '@/types';
+import { ImageFile } from '../types';
 
 interface UploadResult {
   success: boolean;

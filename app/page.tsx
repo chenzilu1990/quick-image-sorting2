@@ -19,6 +19,7 @@ import Link from 'next/link';
 import uploadService from './services/uploadService';
 import comfyuiService from './services/comfyuiService';
 import comfyUIMessageService from './services/comfyuiMessageService';
+import { imageCacheService } from './services/imageCacheService';
 import type { ImageFile, Workflow } from './types';
 
 // 上传结果类型定义
@@ -104,194 +105,37 @@ export default function Home() {
     }
   };
 
-  // 保存图片数据到localStorage
+  // 保存图片数据到IndexedDB
   const saveImagesToStorage = useCallback(async (imgList: ImageFile[]) => {
     if (typeof window === 'undefined') return;
     
     try {
-      // 检查localStorage剩余空间
-      const remainingSpace = getLocalStorageRemainingSpace();
-      const remainingSpaceMB = remainingSpace / (1024 * 1024);
-      console.log(`localStorage剩余空间: 约${remainingSpaceMB.toFixed(2)}MB`);
+      console.log(`保存${imgList.length}张图片到IndexedDB`);
       
-      // 创建转换所有图片为base64的Promise数组
-      const base64Promises = imgList.map(async (img) => {
-        // 如果图片已经是base64格式，直接使用
-        if (img.preview.startsWith('data:')) {
-          return {
-            id: img.id,
-            preview: img.preview,
-            file: {
-              name: img.file.name,
-              displayName: img.file.displayName,
-              size: img.file.size,
-              type: img.file.type
-            },
-            group: img.group
-          };
-        }
-        
-        try {
-          // 将blob URL转为base64
-          const base64Data = await imageToBase64(img.preview);
-          return {
-            id: img.id,
-            preview: base64Data, // 保存base64数据
-            file: {
-              name: img.file.name,
-              displayName: img.file.displayName,
-              size: img.file.size,
-              type: img.file.type
-            },
-            group: img.group
-          };
-        } catch (error) {
-          console.error(`图片 ${img.file.name} 转换失败:`, error);
-          // 返回没有preview的对象，避免整个操作失败
-          return {
-            id: img.id,
-            preview: '', // 空预览
-            file: {
-              name: img.file.name,
-              displayName: img.file.displayName,
-              size: img.file.size,
-              type: img.file.type
-            },
-            group: img.group
-          };
-        }
-      });
+      // 使用IndexedDB保存图片数据
+      await imageCacheService.saveImages(imgList);
       
-      // 等待所有图片转换完成
-      const imageData = await Promise.all(base64Promises);
-      
-      // 过滤掉没有预览的图片
-      const validImageData = imageData.filter(img => img.preview);
-      
-      if (validImageData.length !== imageData.length) {
-        console.warn(`${imageData.length - validImageData.length} 张图片未能成功保存`);
-      }
-      
-      try {
-        // 尝试保存到localStorage
-        const dataString = JSON.stringify(validImageData);
-        const sizeInMB = dataString.length / (1024 * 1024);
-        
-        // 如果数据过大，给出提示
-        if (sizeInMB > remainingSpaceMB) {
-          alert(`警告：图片数据大小(${sizeInMB.toFixed(2)}MB)超过localStorage剩余空间(${remainingSpaceMB.toFixed(2)}MB)，图片状态可能无法保存！`);
-        }
-        
-        localStorage.setItem('savedImages', dataString);
-        console.log(`成功保存图片数据: ${sizeInMB.toFixed(2)}MB`);
-      } catch (storageError) {
-        console.error('存储到localStorage失败:', storageError);
-        alert('图片数据过大，无法保存！请减少图片数量或使用较小的图片。');
-      }
+      console.log('成功保存图片数据到IndexedDB');
     } catch (error) {
       console.error('保存图片数据失败:', error);
-      alert('保存图片数据失败，可能是因为图片过大。');
+      alert('保存图片数据失败，可能是因为图片过大或浏览器不支持IndexedDB。');
     }
   }, []);
 
-  // 保存重命名图片数据到localStorage
+  // 保存重命名图片数据到IndexedDB
   const saveRenamedImagesToStorage = useCallback(async (imgList: ImageFile[]) => {
     if (typeof window === 'undefined') return;
     
     try {
-      // 检查localStorage剩余空间
-      const remainingSpace = getLocalStorageRemainingSpace();
-      const remainingSpaceMB = remainingSpace / (1024 * 1024);
+      console.log(`保存${imgList.length}张重命名图片到IndexedDB`);
       
-      // 创建转换所有图片为base64的Promise数组
-      const base64Promises = imgList.map(async (img) => {
-        // 如果图片已经是base64格式，直接使用
-        if (img.preview.startsWith('data:')) {
-          return {
-            id: img.id,
-            preview: img.preview,
-            file: {
-              name: img.file.name,
-              displayName: img.file.displayName,
-              size: img.file.size,
-              type: img.file.type
-            },
-            group: img.group,
-            isRenamed: (img as any).isRenamed,
-            originalImageId: (img as any).originalImageId,
-            prefix: (img as any).prefix,
-            applyTime: (img as any).applyTime
-          };
-        }
-        
-        try {
-          // 将blob URL转为base64
-          const base64Data = await imageToBase64(img.preview);
-          return {
-            id: img.id,
-            preview: base64Data, // 保存base64数据
-            file: {
-              name: img.file.name,
-              displayName: img.file.displayName,
-              size: img.file.size,
-              type: img.file.type
-            },
-            group: img.group,
-            isRenamed: (img as any).isRenamed,
-            originalImageId: (img as any).originalImageId,
-            prefix: (img as any).prefix,
-            applyTime: (img as any).applyTime
-          };
-        } catch (error) {
-          console.error(`重命名图片 ${img.file.name} 转换失败:`, error);
-          // 返回没有preview的对象
-          return {
-            id: img.id,
-            preview: '',
-            file: {
-              name: img.file.name,
-              displayName: img.file.displayName,
-              size: img.file.size,
-              type: img.file.type
-            },
-            group: img.group,
-            isRenamed: (img as any).isRenamed,
-            originalImageId: (img as any).originalImageId,
-            prefix: (img as any).prefix,
-            applyTime: (img as any).applyTime
-          };
-        }
-      });
+      // 使用IndexedDB保存重命名图片数据
+      await imageCacheService.saveRenamedImages(imgList);
       
-      // 等待所有图片转换完成
-      const imageData = await Promise.all(base64Promises);
-      
-      // 过滤掉没有预览的图片
-      const validImageData = imageData.filter(img => img.preview);
-      
-      if (validImageData.length !== imageData.length) {
-        console.warn(`${imageData.length - validImageData.length} 张重命名图片未能成功保存`);
-      }
-      
-      try {
-        // 尝试保存到localStorage
-        const dataString = JSON.stringify(validImageData);
-        const sizeInMB = dataString.length / (1024 * 1024);
-        
-        // 如果数据过大，给出提示
-        if (sizeInMB > remainingSpaceMB) {
-          alert(`警告：重命名图片数据大小(${sizeInMB.toFixed(2)}MB)超过localStorage剩余空间(${remainingSpaceMB.toFixed(2)}MB)，图片状态可能无法保存！`);
-        }
-        
-        localStorage.setItem('savedRenamedImages', dataString);
-        console.log(`成功保存重命名图片数据: ${sizeInMB.toFixed(2)}MB`);
-      } catch (storageError) {
-        console.error('存储重命名图片到localStorage失败:', storageError);
-        alert('重命名图片数据过大，无法保存！请减少图片数量或使用较小的图片。');
-      }
+      console.log('成功保存重命名图片数据到IndexedDB');
     } catch (error) {
       console.error('保存重命名图片数据失败:', error);
-      alert('保存重命名图片数据失败，可能是因为图片过大。');
+      alert('保存重命名图片数据失败，可能是因为图片过大或浏览器不支持IndexedDB。');
     }
   }, []);
 
@@ -304,69 +148,122 @@ export default function Home() {
   };
 
   // 从localStorage加载图片数据
-  const loadImagesFromStorage = useCallback(() => {
+  const loadImagesFromStorage = useCallback(async () => {
     if (typeof window === 'undefined' || imagesLoaded) return;
     
     try {
-      // 移除警告提示，因为我们现在使用base64，不会有图片失效问题
+      console.log('尝试从IndexedDB加载图片数据...');
       
-      const savedImagesJson = localStorage.getItem('savedImages');
-      if (savedImagesJson) {
-        const savedImagesData = JSON.parse(savedImagesJson);
+      // 从IndexedDB加载图片
+      const restoredImages = await imageCacheService.loadImages();
+      if (restoredImages && restoredImages.length > 0) {
+        console.log(`成功从IndexedDB加载了${restoredImages.length}张图片`);
         
-        // 创建新的图片对象
-        const restoredImages = savedImagesData.map((imgData: any) => {
-          return {
-            ...imgData,
-            file: {
-              ...imgData.file,
-              size: imgData.file.size,
-              type: imgData.file.type
+        // 为图片重新生成blob URL
+        const processedImages = restoredImages.map(image => {
+          // 如果有file属性且没有preview或preview已失效(以blob:开头)，则重新生成preview
+          if (image.file && (!image.preview || image.preview.startsWith('blob:'))) {
+            // 如果图片有原始数据，使用它创建新的blob
+            if (image.file.objectUrl) {
+              // 将base64转换回blob
+              const base64 = image.file.objectUrl;
+              const byteString = atob(base64.split(',')[1]);
+              const mimeType = base64.split(',')[0].split(':')[1].split(';')[0];
+              
+              const ab = new ArrayBuffer(byteString.length);
+              const ia = new Uint8Array(ab);
+              for (let i = 0; i < byteString.length; i++) {
+                ia[i] = byteString.charCodeAt(i);
+              }
+              
+              const blob = new Blob([ab], { type: mimeType });
+              image.preview = URL.createObjectURL(blob);
             }
-          } as ImageFile;
+          }
+          return image;
         });
         
-        if (restoredImages.length > 0) {
-          setImages(restoredImages);
-        }
+        setImages(processedImages);
       }
       
-      // 加载重命名的图片
-      const savedRenamedImagesJson = localStorage.getItem('savedRenamedImages');
-      if (savedRenamedImagesJson) {
-        const savedRenamedImagesData = JSON.parse(savedRenamedImagesJson);
+      // 从IndexedDB加载重命名的图片
+      const restoredRenamedImages = await imageCacheService.loadRenamedImages();
+      if (restoredRenamedImages && restoredRenamedImages.length > 0) {
+        console.log(`成功从IndexedDB加载了${restoredRenamedImages.length}张重命名图片`);
         
-        // 创建新的图片对象
-        const restoredRenamedImages = savedRenamedImagesData.map((imgData: any) => {
-          return {
-            ...imgData,
-            file: {
-              ...imgData.file,
-              size: imgData.file.size,
-              type: imgData.file.type
+        // 为重命名图片重新生成blob URL
+        const processedRenamedImages = restoredRenamedImages.map(image => {
+          // 如果有file属性且没有preview或preview已失效(以blob:开头)，则重新生成preview
+          if (image.file && (!image.preview || image.preview.startsWith('blob:'))) {
+            // 如果图片有原始数据，使用它创建新的blob
+            if (image.file.objectUrl) {
+              // 将base64转换回blob
+              const base64 = image.file.objectUrl;
+              const byteString = atob(base64.split(',')[1]);
+              const mimeType = base64.split(',')[0].split(':')[1].split(';')[0];
+              
+              const ab = new ArrayBuffer(byteString.length);
+              const ia = new Uint8Array(ab);
+              for (let i = 0; i < byteString.length; i++) {
+                ia[i] = byteString.charCodeAt(i);
+              }
+              
+              const blob = new Blob([ab], { type: mimeType });
+              image.preview = URL.createObjectURL(blob);
             }
-          } as ImageFile;
+          }
+          return image;
         });
         
-        if (restoredRenamedImages.length > 0) {
-          setRenamedImages(restoredRenamedImages);
-        }
+        setRenamedImages(processedRenamedImages);
       }
       
       setImagesLoaded(true); // 标记为已加载
     } catch (error) {
       console.error('加载保存的图片失败:', error);
+      setImagesLoaded(true); // 即使出错也标记为已加载，避免无限循环
     }
   }, [imagesLoaded]);
 
+  // 从localStorage加载图片数据的useEffect
+  useEffect(() => {
+    // 如果已经加载过图片，不再重复加载
+    if (imagesLoaded) return;
+    console.trace('loadImagesFromStorage111111111');
+    const loadData = async () => {
+      await loadImagesFromStorage();
+    };
+    
+    loadData();
+  }, [loadImagesFromStorage, imagesLoaded]);
+
   // 修改handleImagesDrop函数，处理异步保存
-  const handleImagesDrop = useCallback((newImages: ImageFile[]) => {
+  const handleImagesDrop = useCallback(async (newImages: ImageFile[]) => {
     if (!newImages || !Array.isArray(newImages) || newImages.length === 0) return;
     
-    const updatedImages = [...images, ...newImages];
+    // 为每个图片保存原始数据作为objectUrl
+    const imagesWithObjectUrl = await Promise.all(newImages.map(async (image) => {
+      try {
+        // 将图片URL转换为base64，用于持久存储
+        const objectUrl = await imageToBase64(image.preview);
+        
+        return {
+          ...image,
+          file: {
+            ...image.file,
+            objectUrl // 存储base64数据
+          }
+        };
+      } catch (error) {
+        console.error('处理图片数据失败:', error);
+        return image;
+      }
+    }));
+    
+    const updatedImages = [...images, ...imagesWithObjectUrl];
     setImages(updatedImages);
     saveImagesToStorage(updatedImages);
-  }, [images, saveImagesToStorage]);
+  }, [images, saveImagesToStorage, imageToBase64]);
 
   // 修改deleteSelected函数，处理异步保存
   const deleteSelected = useCallback(() => {
@@ -440,13 +337,14 @@ export default function Home() {
       // 创建新名称
       const newDisplayName = `${prefix}.${typeName}${fileExt}`;
       
-      // 创建新的图片对象
+      // 创建新的图片对象，保留原始图片的objectUrl
       return {
         ...image,
         id: `renamed-${image.id}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, // 确保ID唯一
         file: {
           ...image.file,
           displayName: newDisplayName
+          // objectUrl会自动继承自原始image.file
         },
         isRenamed: true,
         originalImageId: image.id,
@@ -465,6 +363,20 @@ export default function Home() {
     
   }, [prefix, images, renamedImages, saveRenamedImagesToStorage]);
 
+  // 修改clearImages函数，清理base64图片
+  const clearImages = useCallback(() => {
+    if (images.length === 0) return;
+    
+    // 释放预览URL (仅blob URL)
+    images.forEach(image => {
+      if (image && image.preview && image.preview.startsWith('blob:')) URL.revokeObjectURL(image.preview);
+    });
+    setImages([]);
+    
+    // 清理IndexedDB缓存
+    imageCacheService.clearImages();
+  }, [images]);
+
   // 修改clearRenamedImages函数，清理base64图片
   const clearRenamedImages = useCallback(() => {
     if (renamedImages.length === 0) return;
@@ -475,25 +387,10 @@ export default function Home() {
     });
     
     setRenamedImages([]);
-    localStorage.removeItem('savedRenamedImages');
-  }, [renamedImages]);
-
-  // 修改clearImages函数，清理base64图片
-  const clearImages = useCallback(() => {
-    if (images.length === 0) return;
     
-    // 释放预览URL (仅blob URL)
-    images.forEach(image => {
-      if (image && image.preview && image.preview.startsWith('blob:')) URL.revokeObjectURL(image.preview);
-    });
-    setImages([]);
-    localStorage.removeItem('savedImages');
-  }, [images]);
-
-  // 从localStorage加载图片数据的useEffect
-  useEffect(() => {
-    loadImagesFromStorage();
-  }, [loadImagesFromStorage]);
+    // 清理IndexedDB缓存
+    imageCacheService.clearRenamedImages();
+  }, [renamedImages]);
 
   // 将图片URL转换为Blob对象
   const urlToBlob = async (url: string): Promise<Blob> => {
@@ -744,6 +641,7 @@ export default function Home() {
 
   // 组件卸载时清理所有预览URL
   useEffect(() => {
+    console.trace('组件卸载时清理所有预览URL11111111111');
     return () => {
       images.forEach(image => {
         if (image && image.preview) URL.revokeObjectURL(image.preview);
@@ -753,6 +651,7 @@ export default function Home() {
 
   // 添加双击事件处理
   useEffect(() => {
+    console.trace('添加双击事件处理11111111111');
     const mainElement = document.querySelector('main');
     
     // 监听双击事件
