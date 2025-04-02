@@ -229,7 +229,7 @@ export default function Home() {
   useEffect(() => {
     // 如果已经加载过图片，不再重复加载
     if (imagesLoaded) return;
-    console.trace('loadImagesFromStorage111111111');
+
     const loadData = async () => {
       await loadImagesFromStorage();
     };
@@ -641,7 +641,7 @@ export default function Home() {
 
   // 组件卸载时清理所有预览URL
   useEffect(() => {
-    console.trace('组件卸载时清理所有预览URL11111111111');
+
     return () => {
       images.forEach(image => {
         if (image && image.preview) URL.revokeObjectURL(image.preview);
@@ -651,7 +651,7 @@ export default function Home() {
 
   // 添加双击事件处理
   useEffect(() => {
-    console.trace('添加双击事件处理11111111111');
+
     const mainElement = document.querySelector('main');
     
     // 监听双击事件
