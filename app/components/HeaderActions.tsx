@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import Link from 'next/link';
 
 /**
@@ -8,17 +7,12 @@ import Link from 'next/link';
  * 
  * 显示配置链接和其他顶部操作
  */
-const HeaderActions: React.FC = () => {
+export default function HeaderActions() {
   return (
     <div className="header-actions">
-      <Link href="/config" className="config-link">
-        <span className="icon">⚙️</span> 图片上传配置
-      </Link>
-      <Link href="/config/comfyui" className="config-link">
-        <span className="icon">🎨</span> ComfyUI配置
-      </Link>
+      <div className="app-version">
+        <span title="版本号">v1.0.3</span>
+      </div>
     </div>
   );
-};
-
-export default HeaderActions; 
+} 

@@ -179,10 +179,6 @@ export default function ComfyUIConfig() {
     <main className="config-page">
       <h1>ComfyUI 配置</h1>
       
-      <Link href="/" className="back-link">
-        &larr; 返回主页
-      </Link>
-      
       <div className="config-form">
         <h2>服务器设置</h2>
         

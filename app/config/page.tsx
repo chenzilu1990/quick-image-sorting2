@@ -2,7 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import '../globals.css';
+
+// 定义配置更新值的接口
+interface ConfigUpdateValues {
+  githubToken?: string;
+  githubRepo?: string;
+  githubOwner?: string;
+  customApiUrl?: string;
+  customApiKey?: string;
+  selectedService?: string;
+}
 
 export default function Config() {
   // GitHub配置
@@ -53,7 +62,7 @@ export default function Config() {
   }, []);
   
   // 保存配置到localStorage
-  const saveConfig = (updatedValues = {}) => {
+  const saveConfig = (updatedValues: ConfigUpdateValues = {}) => {
     setIsSaving(true);
     
     try {
@@ -93,34 +102,34 @@ export default function Config() {
   };
   
   // 处理服务类型变更 - 直接变更时保存
-  const handleServiceChange = (service) => {
+  const handleServiceChange = (service: string) => {
     setSelectedService(service);
     saveConfig({ selectedService: service });
   };
   
   // 处理GitHub配置变更 - 仅存储状态，不立即保存
-  const handleGithubTokenChange = (value) => {
+  const handleGithubTokenChange = (value: string) => {
     setGithubToken(value);
     setConfigChanged(true);
   };
   
-  const handleGithubRepoChange = (value) => {
+  const handleGithubRepoChange = (value: string) => {
     setGithubRepo(value);
     setConfigChanged(true);
   };
   
-  const handleGithubOwnerChange = (value) => {
+  const handleGithubOwnerChange = (value: string) => {
     setGithubOwner(value);
     setConfigChanged(true);
   };
   
   // 处理自定义服务器配置变更 - 仅存储状态，不立即保存
-  const handleCustomApiUrlChange = (value) => {
+  const handleCustomApiUrlChange = (value: string) => {
     setCustomApiUrl(value);
     setConfigChanged(true);
   };
   
-  const handleCustomApiKeyChange = (value) => {
+  const handleCustomApiKeyChange = (value: string) => {
     setCustomApiKey(value);
     setConfigChanged(true);
   };
@@ -179,7 +188,7 @@ export default function Config() {
       }
     } catch (error) {
       console.error('测试连接出错:', error);
-      setSaveMessage(`连接测试失败: ${error.message}`);
+      setSaveMessage(`连接测试失败: ${error instanceof Error ? error.message : '未知错误'}`);
     } finally {
       setIsSaving(false);
     }
@@ -188,10 +197,6 @@ export default function Config() {
   return (
     <main className="config-page">
       <h1>图片上传服务配置</h1>
-      
-      <Link href="/" className="back-link">
-        &larr; 返回主页
-      </Link>
       
       <div className="config-form">
         <div className="service-selector">

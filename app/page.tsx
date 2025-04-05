@@ -5,7 +5,7 @@ import ImageDropzone, { ImageDropzoneRef } from './components/ImageDropzone';
 import SortableImageGrid, { SortableImageGridRef } from './components/SortableImageGrid';
 import WorkflowModal from './components/WorkflowModal';
 import ImageGroupViewer from './components/ImageGroupViewer';
-import SelectedImagesPreview from './components/SelectedImagesPreview';
+import SelectedImagesScroller from './components/SelectedImagesScroller';
 import ActionButtons from './components/ActionButtons';
 import RenamedImageActions from './components/RenamedImageActions';
 import PrefixInputForm from './components/PrefixInputForm';
@@ -949,7 +949,7 @@ export default function Home() {
             />
             
             {/* 选中图片预览区 */}
-            <SelectedImagesPreview 
+            <SelectedImagesScroller 
               selectedCount={selectedCount}
               selectedImagesIds={selectedImagesRef.current}
               images={images}
