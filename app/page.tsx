@@ -988,6 +988,15 @@ export default function Home() {
         {/* 头部配置链接 */}
         <HeaderActions />
         
+        {/* SEO 友好的页面标题和描述 */}
+        <header className="seo-header">
+          <h1>专业在线图片排序与重命名工具</h1>
+          <p className="seo-description">
+            欢迎使用我们的在线图片排序工具，支持拖拽实现快速图片排序，提供多种图片重命名规则（Amazon规则、前缀-序号-后缀、自定义序列、AI生成），
+            帮助您高效处理产品图片，提升工作效率。无需安装，完全免费！
+          </p>
+        </header>
+        
         {/* 前缀输入区域 */}
         <PrefixInputForm 
           prefix={prefix}
@@ -1101,8 +1110,39 @@ export default function Home() {
             />
           </>
         ) : (
-          <EmptyStateMessage />
+          <>
+            <EmptyStateMessage />
+            
+            {/* SEO 友好的功能介绍 */}
+            <section className="seo-features">
+              <h2>图片排序与重命名工具功能</h2>
+              <div className="features-grid">
+                <div className="feature-item">
+                  <h3>拖拽式在线图片排序</h3>
+                  <p>通过简单的拖拽操作，实现图片的快速排序，所见即所得。</p>
+                </div>
+                <div className="feature-item">
+                  <h3>多种重命名规则</h3>
+                  <p>支持Amazon规则、前缀-序号-后缀、自定义序列和AI生成等多种命名方式。</p>
+                </div>
+                <div className="feature-item">
+                  <h3>批量下载功能</h3>
+                  <p>排序和重命名完成后，一键批量下载所有图片，无需二次操作。</p>
+                </div>
+                <div className="feature-item">
+                  <h3>云端上传选项</h3>
+                  <p>支持直接上传到云端存储，更便捷地共享和使用处理后的图片。</p>
+                </div>
+              </div>
+            </section>
+          </>
         )}
+        
+        {/* SEO友好的页脚 */}
+        <footer className="seo-footer">
+          <p>优质的在线图片排序和重命名工具，提高产品图片处理效率，欢迎使用！</p>
+          <p>© {new Date().getFullYear()} 图片排序工具 | 保留所有权利</p>
+        </footer>
       </main>
     </DndProvider>
   );

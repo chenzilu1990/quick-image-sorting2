@@ -77,7 +77,7 @@ const PrefixInputForm: React.FC<PrefixInputFormProps> = ({
           <div className="prefix-container">
             <input 
               type="text" 
-              placeholder={isAmazonMode ? "输入前缀（必填）..." : "输入前缀（可选）..."}
+              placeholder={isAmazonMode ? "SKU（必填）..." : "输入前缀（可选）..."}
               value={prefix}
               onChange={(e) => onPrefixChange(e.target.value)}
               className="prefix-input"
