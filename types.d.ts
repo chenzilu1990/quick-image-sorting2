@@ -16,6 +16,15 @@ export interface ImageFile {
   originalImageId?: string;
   prefix?: string;
   applyTime?: string;
+  renameMode?: RenameMode;
+}
+
+// 重命名模式枚举
+export enum RenameMode {
+  AMAZON = 'amazon',
+  PREFIX_INDEX = 'prefix_index',
+  CUSTOM_SEQUENCE = 'custom_sequence',
+  AI_GENERATED = 'ai_generated'
 }
 
 // 重命名配置类型定义
@@ -24,6 +33,9 @@ export interface RenameConfig {
   useMain: boolean;
   usePT: boolean;
   useSwitch: boolean;
+  renameMode: RenameMode;
+  suffix?: string;
+  customSequence?: string[];
 }
 
 // GitHub配置类型定义
@@ -47,7 +59,7 @@ export interface ServerConfig {
 export interface ComfyUIConfig {
   serverUrl: string;
   defaultWorkflow: string;
-  authorizedDirectoryName?: string;  // 已授权的目录名
+  authorizedDirectoryName?: string;
 }
 
 // 工作流类型定义

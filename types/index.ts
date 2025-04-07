@@ -28,6 +28,14 @@ export interface Workflow {
   path: string;
 }
 
+// 重命名模式枚举
+export enum RenameMode {
+  AMAZON = 'amazon',
+  PREFIX_INDEX = 'prefix_index',
+  CUSTOM_SEQUENCE = 'custom_sequence',
+  AI_GENERATED = 'ai_generated'
+}
+
 // 重命名组类型
 export interface RenamedGroup {
   prefix: string;

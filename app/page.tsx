@@ -21,6 +21,7 @@ import comfyuiService from './services/comfyuiService';
 import comfyUIMessageService from './services/comfyuiMessageService';
 import { imageCacheService } from './services/imageCacheService';
 import type { ImageFile, Workflow } from './types';
+import { RenameMode } from '../types/index';
 
 // 上传结果类型定义
 interface UploadResult {
@@ -39,6 +40,9 @@ export default function Home() {
   const selectedImagesRef = useRef<string[]>([]);
   const [selectedCount, setSelectedCount] = useState<number>(0);
   const [prefix, setPrefix] = useState<string>('');
+  const [suffix, setSuffix] = useState('');
+  const [customSequence, setCustomSequence] = useState('');
+  const [renameMode, setRenameMode] = useState<RenameMode>(RenameMode.AMAZON);
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
   const gridRef = useRef<SortableImageGridRef>(null);
   const [renamedImages, setRenamedImages] = useState<ImageFile[]>([]);
@@ -289,9 +293,16 @@ export default function Home() {
     
   }, [images, saveImagesToStorage]);
 
-  // 修改applyPrefix函数，处理异步保存
+  // 修改applyPrefix函数，支持多种重命名模式
   const applyPrefix = useCallback(() => {
-    if (selectedImagesRef.current.length === 0 || !prefix.trim()) return;
+    // 根据重命名模式检查必填输入
+    if (selectedImagesRef.current.length === 0) return;
+    
+    // Amazon模式需要前缀
+    if (renameMode === RenameMode.AMAZON && !prefix.trim()) return;
+    
+    // 自定义序列模式需要序列
+    if (renameMode === RenameMode.CUSTOM_SEQUENCE && !customSequence.trim()) return;
     
     // 保存当前选中的图片ID，因为之后会重置选择状态
     const selectedIds = [...selectedImagesRef.current];
@@ -306,22 +317,52 @@ export default function Home() {
     });
     
     // 为选中图片创建重命名副本
-    const newRenamedImages = selectedImagesToRename.map(image => {
+    const newRenamedImages = selectedImagesToRename.map((image, index) => {
       const selectedIndex = image.selectionIndex;
       let typeName = '';
       
-      // 第一张图片为MAIN
-      if (selectedIndex === 0) {
-        typeName = 'MAIN';
-      } 
-      // 最后一张图片为SWITCH
-      else if (selectedIndex === selectedImagesToRename.length - 1) {
-        typeName = 'SWITCH';
-      } 
-      // 中间图片为PT01到PT08
-      else {
-        const ptIndex = selectedIndex;
-        typeName = `PT${String(ptIndex).padStart(2, '0')}`;
+      // 根据不同的重命名模式生成不同的文件名
+      switch (renameMode) {
+        case RenameMode.AMAZON:
+          // 第一张图片为MAIN
+          if (selectedIndex === 0) {
+            typeName = 'MAIN';
+          } 
+          // 最后一张图片为SWITCH
+          else if (selectedIndex === selectedImagesToRename.length - 1) {
+            typeName = 'SWITCH';
+          } 
+          // 中间图片为PT01到PT08
+          else {
+            const ptIndex = selectedIndex;
+            typeName = `PT${String(ptIndex).padStart(2, '0')}`;
+          }
+          break;
+          
+        case RenameMode.PREFIX_INDEX:
+          // 前缀-index-后缀格式，其中前缀和后缀可选
+          typeName = String(selectedIndex + 1).padStart(2, '0');
+          break;
+          
+        case RenameMode.CUSTOM_SEQUENCE:
+          // 自定义序列，如果序列长度不够则重复使用最后一个值
+          const sequences = customSequence.split(',').map(s => s.trim()).filter(s => s !== '');
+          if (sequences.length === 0) {
+            typeName = String(selectedIndex + 1);
+          } else if (selectedIndex < sequences.length) {
+            typeName = sequences[selectedIndex];
+          } else {
+            typeName = sequences[sequences.length - 1] + (selectedIndex - sequences.length + 1);
+          }
+          break;
+          
+        case RenameMode.AI_GENERATED:
+          // 暂时使用默认名称，后期可以接入AI API
+          typeName = `AI-Generated-${String(selectedIndex + 1).padStart(2, '0')}`;
+          break;
+          
+        default:
+          typeName = String(selectedIndex + 1);
       }
       
       // 获取文件扩展名（优先使用已有的displayName，否则使用原始文件名）
@@ -334,8 +375,39 @@ export default function Home() {
         fileExt = sourceFileName.substring(lastDotIndex);
       }
       
-      // 创建新名称
-      const newDisplayName = `${prefix}.${typeName}${fileExt}`;
+      // 根据不同重命名模式创建新名称
+      let newDisplayName = '';
+      switch (renameMode) {
+        case RenameMode.AMAZON:
+          newDisplayName = `${prefix}.${typeName}${fileExt}`;
+          break;
+          
+        case RenameMode.PREFIX_INDEX:
+          // 处理前缀和后缀可以为空的情况
+          if (prefix && suffix) {
+            newDisplayName = `${prefix}${typeName}${suffix}${fileExt}`;
+          } else if (prefix && !suffix) {
+            newDisplayName = `${prefix}${typeName}${fileExt}`;
+          } else if (!prefix && suffix) {
+            newDisplayName = `${typeName}${suffix}${fileExt}`;
+          } else {
+            newDisplayName = `${typeName}${fileExt}`;
+          }
+          break;
+          
+        case RenameMode.CUSTOM_SEQUENCE:
+          // 自定义序列直接使用用户输入，不需要前缀
+          newDisplayName = `${typeName}${fileExt}`;
+          break;
+          
+        case RenameMode.AI_GENERATED:
+          // AI生成的名称，不需要前缀
+          newDisplayName = `${typeName}${fileExt}`;
+          break;
+          
+        default:
+          newDisplayName = `${prefix || ''}-${typeName}${fileExt}`;
+      }
       
       // 创建新的图片对象，保留原始图片的objectUrl
       return {
@@ -349,6 +421,7 @@ export default function Home() {
         isRenamed: true,
         originalImageId: image.id,
         prefix: prefix, // 保存使用的前缀
+        renameMode: renameMode, // 保存使用的重命名模式
         applyTime: new Date().toLocaleString() // 保存应用时间，便于识别
       } as ImageFile;
     });
@@ -361,7 +434,7 @@ export default function Home() {
     // 状态更新后立即重置选择
     gridRef.current?.resetSelection();
     
-  }, [prefix, images, renamedImages, saveRenamedImagesToStorage]);
+  }, [prefix, suffix, customSequence, renameMode, images, renamedImages, saveRenamedImagesToStorage]);
 
   // 修改clearImages函数，清理base64图片
   const clearImages = useCallback(() => {
@@ -921,6 +994,12 @@ export default function Home() {
           selectedCount={selectedCount}
           onPrefixChange={setPrefix}
           onApplyPrefix={applyPrefix}
+          renameMode={renameMode}
+          onRenameModeChange={setRenameMode}
+          suffix={suffix}
+          onSuffixChange={setSuffix}
+          customSequence={customSequence}
+          onCustomSequenceChange={setCustomSequence}
         />
         
         {/* 提示信息 */}
