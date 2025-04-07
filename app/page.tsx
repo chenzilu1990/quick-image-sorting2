@@ -954,6 +954,7 @@ export default function Home() {
               selectedImagesIds={selectedImagesRef.current}
               images={images}
               onImageError={handleImageError}
+              onClearSelection={() => gridRef.current?.resetSelection()}
             />
             
             {/* 工作流选择模态框 */}

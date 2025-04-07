@@ -59,16 +59,24 @@ const SelectedImagesScroller: React.FC<SelectedImagesScrollerProps> = ({
       <style jsx>{`
         .scroller-container {
           position: fixed;
+          display: flex;
+          flex-direction: column;
           bottom: 0;
           right: 0;
-          left: 240px;
+          left: 240px; /* 考虑侧边栏宽度 */
           background-color: #f0f8ff;
           border-top: 2px solid #2196f3;
           box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
           padding: 1rem;
           z-index: 950;
-          height: 180px;
+          height: 220px;
           overflow: hidden; /* 禁止容器自身滚动 */
+          transition: left 0.3s ease; /* 平滑过渡 */
+        }
+        
+        /* 侧边栏折叠时的样式 */
+        :global(.sidebar.collapsed) + :global(.content-container) .scroller-container {
+          left: 60px;
         }
         
         .scroller-header {
@@ -77,6 +85,7 @@ const SelectedImagesScroller: React.FC<SelectedImagesScrollerProps> = ({
           align-items: center;
           margin-bottom: 10px;
           height: 30px; /* 固定标题高度 */
+          width: 100%;
         }
         
         .scroller-title {
@@ -163,7 +172,7 @@ const SelectedImagesScroller: React.FC<SelectedImagesScrollerProps> = ({
         
         @media (max-width: 768px) {
           .scroller-container {
-            left: 200px;
+            left: 0;
           }
         }
 
