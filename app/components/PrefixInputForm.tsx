@@ -56,7 +56,7 @@ const PrefixInputForm: React.FC<PrefixInputFormProps> = ({
   };
 
   return (
-    <div className="floating-prefix-form">
+    // <div className="floating-prefix-form">
       <div className="rename-options">
         <div className="rename-mode-selector">
           <label>重命名方式：</label>
@@ -126,7 +126,7 @@ const PrefixInputForm: React.FC<PrefixInputFormProps> = ({
           应用重命名
         </button>
       </div>
-    </div>
+    // </div>
   );
 };
 

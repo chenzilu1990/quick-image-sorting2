@@ -1,9 +1,4 @@
----
-description: 
-globs: 
-alwaysApply: true
----
- # 图片排序应用架构
+# 图片排序应用架构
 
 ## 项目架构图
 
@@ -95,4 +90,4 @@ alwaysApply: true
 - **UI交互**: React 18.2.0
 - **拖拽功能**: react-dnd 16.0.1
 - **文件处理**: JSZip 3.10.1
-- **开发语言**: TypeScript 5.8.2
+- **开发语言**: TypeScript 5.8.2 
