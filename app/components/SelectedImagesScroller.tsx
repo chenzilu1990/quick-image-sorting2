@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useRef, useEffect } from 'react';
-import type { ImageFile } from '../types';
+import type { ImageFile, RenameMode } from '../types';
+import PrefixInputForm from './PrefixInputForm';
 
 interface SelectedImagesScrollerProps {
   selectedCount: number;
@@ -9,6 +10,16 @@ interface SelectedImagesScrollerProps {
   images: ImageFile[];
   onImageError: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
   onClearSelection?: () => void;
+  prefix: string;
+  // selectedCount: number;
+  onPrefixChange: (value: string) => void;
+  onApplyPrefix: () => void;
+  renameMode: RenameMode;
+  onRenameModeChange: (mode: RenameMode) => void;
+  suffix: string;
+  onSuffixChange: (value: string) => void;
+  customSequence: string;
+  onCustomSequenceChange: (value: string) => void;
 }
 
 /**
@@ -20,7 +31,17 @@ const SelectedImagesScroller: React.FC<SelectedImagesScrollerProps> = ({
   selectedImagesIds,
   images,
   onImageError,
-  onClearSelection
+  onClearSelection,
+  prefix,
+  // selectedCount,
+  onPrefixChange,
+  onApplyPrefix,
+  renameMode,
+  onRenameModeChange,
+  suffix,
+  onSuffixChange,
+  customSequence,
+  onCustomSequenceChange
 }) => {
   if (selectedCount === 0) return null;
 
@@ -69,7 +90,7 @@ const SelectedImagesScroller: React.FC<SelectedImagesScrollerProps> = ({
           box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
           padding: 1rem;
           z-index: 950;
-          height: 220px;
+          height: 250px;
           overflow: hidden; /* 禁止容器自身滚动 */
           transition: left 0.3s ease; /* 平滑过渡 */
         }
@@ -218,6 +239,18 @@ const SelectedImagesScroller: React.FC<SelectedImagesScrollerProps> = ({
           </div>
         ))}
       </div>
+      <PrefixInputForm
+        prefix={prefix}
+        selectedCount={selectedCount}
+        onPrefixChange={onPrefixChange}
+        onApplyPrefix={onApplyPrefix}
+        renameMode={renameMode}
+        onRenameModeChange={onRenameModeChange}
+        suffix={suffix}
+        onSuffixChange={onSuffixChange}
+        customSequence={customSequence}
+        onCustomSequenceChange={onCustomSequenceChange}
+      />
     </div>
   );
 };

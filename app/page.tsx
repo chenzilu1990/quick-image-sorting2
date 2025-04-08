@@ -8,7 +8,7 @@ import ImageGroupViewer from './components/ImageGroupViewer';
 import SelectedImagesScroller from './components/SelectedImagesScroller';
 import ActionButtons from './components/ActionButtons';
 import RenamedImageActions from './components/RenamedImageActions';
-import PrefixInputForm from './components/PrefixInputForm';
+// import PrefixInputForm from './components/PrefixInputForm';
 import HeaderActions from './components/HeaderActions';
 import EmptyStateMessage from './components/EmptyStateMessage';
 import JSZip from 'jszip';
@@ -997,19 +997,7 @@ export default function Home() {
           </p>
         </header>
         
-        {/* 前缀输入区域 */}
-        <PrefixInputForm 
-          prefix={prefix}
-          selectedCount={selectedCount}
-          onPrefixChange={setPrefix}
-          onApplyPrefix={applyPrefix}
-          renameMode={renameMode}
-          onRenameModeChange={setRenameMode}
-          suffix={suffix}
-          onSuffixChange={setSuffix}
-          customSequence={customSequence}
-          onCustomSequenceChange={setCustomSequence}
-        />
+
         
         {/* 提示信息 */}
         {images.length === 0 && (
@@ -1043,6 +1031,16 @@ export default function Home() {
               images={images}
               onImageError={handleImageError}
               onClearSelection={() => gridRef.current?.resetSelection()}
+
+              prefix={prefix}
+              onPrefixChange={setPrefix}
+              onApplyPrefix={applyPrefix}
+              renameMode={renameMode}
+              onRenameModeChange={setRenameMode}
+              suffix={suffix}
+              onSuffixChange={setSuffix}
+              customSequence={customSequence}
+              onCustomSequenceChange={setCustomSequence}
             />
             
             {/* 工作流选择模态框 */}
