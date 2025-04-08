@@ -21,7 +21,7 @@ import comfyuiService from './services/comfyuiService';
 import comfyUIMessageService from './services/comfyuiMessageService';
 import { imageCacheService } from './services/imageCacheService';
 import type { ImageFile, Workflow } from './types';
-import { RenameMode } from '../types/index';
+import { RenameMode } from './types';
 
 // 上传结果类型定义
 interface UploadResult {

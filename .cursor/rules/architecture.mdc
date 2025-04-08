@@ -1,0 +1,98 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+ # 图片排序应用架构
+
+## 项目架构图
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         图片排序应用                               │
+├───────────────┬─────────────────────────┬─────────────────────────┤
+│               │                         │                         │
+│ 📱 用户界面组件 │    🔄 业务逻辑服务      │   🗄️ 数据存储与缓存     │
+│               │                         │                         │
+├───────────────┼─────────────────────────┼─────────────────────────┤
+│               │                         │                         │
+│ SortableImageGrid │ imageCacheService  │ IndexedDB               │
+│ ImageDropzone     │ uploadService      │ - 图片数据              │
+│ PrefixInputForm   │ comfyuiService     │ - 重命名图片数据         │
+│ SelectedImages... │ comfyuiMessage...  │ - 元数据                │
+│ WorkflowModal     │                    │                         │
+│ ActionButtons     │                    │                         │
+│               │                         │                         │
+└───────────────┴─────────────────────────┴─────────────────────────┘
+      ↑                    ↑                       ↑
+      │                    │                       │
+      └────────────────────┼───────────────────────┘
+                          │
+                   ┌──────┴──────┐
+                   │             │
+                   │ Next.js框架  │
+                   │             │
+                   └─────────────┘
+```
+
+## 项目结构概述
+
+这是一个基于Next.js框架的在线图片排序和重命名应用程序，主要用于帮助用户对图片进行拖拽排序、批量重命名和处理。
+
+### 主要文件引用
+
+- @app/page.tsx - 主应用入口点
+- @app/components/SortableImageGrid.tsx - 可拖拽排序的图片网格
+- @app/components/ImageDropzone.tsx - 图片拖放上传区域
+- @app/services/imageCacheService.ts - 图片缓存服务
+- @app/services/uploadService.js - 上传服务
+- @app/types.ts - 应用类型定义
+
+### 核心功能模块
+
+#### 用户界面组件 (UI Components)
+
+- **SortableImageGrid**: 可拖拽排序的图片网格
+- **ImageDropzone**: 图片拖放上传区域
+- **PrefixInputForm**: 图片重命名前缀输入表单
+- **SelectedImagesScroller**: 已选图片滚动显示区
+- **ImageGroupViewer**: 图片分组查看器
+- **WorkflowModal**: 工作流弹窗
+- **ActionButtons**: 操作按钮组
+
+#### 业务逻辑服务 (Services)
+
+- **imageCacheService**: 图片缓存服务，负责图片数据的存储和读取
+  - 使用IndexedDB进行持久化存储
+  - 提供缓存清理、大小计算等功能
+  - 支持降级回退到localStorage
+
+- **uploadService**: 图片上传服务
+  - 处理图片上传到服务器
+  - 支持批量上传和状态追踪
+
+- **comfyuiService**: ComfyUI集成服务
+  - 与AI图像处理服务集成
+  - 管理工作流和图像处理
+
+#### 数据模型 (Data Models)
+
+- **ImageFile**: 图片文件模型，包含id、预览URL、文件信息等
+- **Workflow**: 工作流模型，定义ComfyUI工作流数据结构
+- **RenameMode**: 重命名模式枚举，支持多种重命名模式
+
+#### 数据流
+
+1. 用户通过拖放或点击上传图片
+2. 图片在前端显示并可进行拖拽排序
+3. 用户可以选择图片并应用重命名规则
+4. 重命名后的图片可以下载或上传到服务器
+5. 支持与ComfyUI集成进行图像处理
+
+### 技术栈
+
+- **前端框架**: Next.js 14.0.0
+- **UI交互**: React 18.2.0
+- **拖拽功能**: react-dnd 16.0.1
+- **文件处理**: JSZip 3.10.1
+- **开发语言**: TypeScript 5.8.2

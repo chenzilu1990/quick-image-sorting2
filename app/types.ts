@@ -42,3 +42,10 @@ export interface Workflow {
   filePath?: string;
   fileContent?: string;
 } 
+
+export enum RenameMode {
+  AMAZON = 'amazon',
+  PREFIX_INDEX = 'prefix_index',
+  CUSTOM_SEQUENCE = 'custom_sequence',
+  AI_GENERATED = 'ai_generated'
+}
