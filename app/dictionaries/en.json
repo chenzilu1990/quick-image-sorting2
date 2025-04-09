@@ -1,7 +1,11 @@
 {
   "navigation": {
     "home": "Home",
-    "about": "About"
+    "about": "About",
+    "uploadConfig": "Upload Config",
+    "comfyUIConfig": "ComfyUI Config",
+    "sidebarTitle": "Image Quick Sort",
+    "toggleSidebar": "Toggle Sidebar"
   },
   "home": {
     "title": "Image Sorting and Renaming Tool",

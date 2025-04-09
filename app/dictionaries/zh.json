@@ -1,7 +1,11 @@
 {
   "navigation": {
     "home": "首页",
-    "about": "关于"
+    "about": "关于",
+    "uploadConfig": "上传配置",
+    "comfyUIConfig": "ComfyUI配置",
+    "sidebarTitle": "图片快速排序",
+    "toggleSidebar": "切换侧边栏"
   },
   "home": {
     "title": "图片快速排序与重命名工具",
