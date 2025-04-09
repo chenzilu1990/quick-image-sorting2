@@ -1,4 +1,9 @@
-# 图片排序应用架构
+---
+description: 
+globs: 
+alwaysApply: true
+---
+ # 图片排序应用架构
 
 ## 项目架构图
 
@@ -49,8 +54,8 @@
 
 - **SortableImageGrid**: 可拖拽排序的图片网格
 - **ImageDropzone**: 图片拖放上传区域
-- **PrefixInputForm**: 图片重命名前缀输入表单
-- **SelectedImagesScroller**: 已选图片滚动显示区
+- **PrefixInputForm**: 图片重命名模块
+- **SelectedImagesScroller**: 已选图片预览
 - **ImageGroupViewer**: 图片分组查看器
 - **WorkflowModal**: 工作流弹窗
 - **ActionButtons**: 操作按钮组
@@ -86,8 +91,12 @@
 
 ### 技术栈
 
-- **前端框架**: Next.js 14.0.0
+- **前端框架**: Next.js 14.0.0(Using App Router)
 - **UI交互**: React 18.2.0
 - **拖拽功能**: react-dnd 16.0.1
 - **文件处理**: JSZip 3.10.1
-- **开发语言**: TypeScript 5.8.2 
+- **开发语言**: TypeScript 5.8.2
+
+
+
+
