@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import '../../globals.css';
-import comfyUIService from '../../services/comfyuiService';
-import type { ComfyUIConfig } from '@/types';
+import '../../../globals.css';
+import comfyUIService from '../../../services/comfyuiService';
+import type { ComfyUIConfig } from '../../../types';
+import { useDictionary } from '../../components/client-dictionary';
 
 interface ConnectionStatus {
   status: boolean;
@@ -12,7 +12,9 @@ interface ConnectionStatus {
   data?: any;
 }
 
-export default function ComfyUIConfig() {
+export default function ComfyUIConfigClient() {
+  const dict = useDictionary();
+  
   // ComfyUI配置
   const [serverUrl, setServerUrl] = useState<string>('http://localhost:8088');
   const [authorizedPath, setAuthorizedPath] = useState<string | null>(null);
@@ -68,18 +70,18 @@ export default function ComfyUIConfig() {
       
       // 在保存前设置"保存中"状态
       setIsSaving(true);
-      setSaveMessage('正在保存...');
+      setSaveMessage(dict.buttons.saving);
       
       const saved = await comfyUIService.saveConfig(config);
       
       if (saved) {
-        setSaveMessage('配置已自动保存');
+        setSaveMessage(dict.status.configSaved);
         setConfigChanged(false);
         
         // 更新显示的授权路径
         updateAuthorizedPathDisplay();
       } else {
-        setSaveMessage('保存失败，请重试');
+        setSaveMessage(dict.status.saveFailed);
       }
       
       setTimeout(() => {
@@ -87,7 +89,7 @@ export default function ComfyUIConfig() {
       }, 3000);
     } catch (error: any) {
       console.error('保存配置出错:', error);
-      setSaveMessage('保存失败: ' + error.message);
+      setSaveMessage(dict.errors.saveConfigError.replace('{message}', error.message));
       
       setTimeout(() => {
         setSaveMessage('');
@@ -105,7 +107,7 @@ export default function ComfyUIConfig() {
       const tempId = 'comfyui-workflows-' + Date.now();
       const result = await comfyUIService.requestDirectoryAccess(tempId);
       if (result.success) {
-        setSaveMessage(`成功获取目录"${result.directoryName}"的访问权限`);
+        setSaveMessage(dict.status.accessGranted.replace('{directory}', result.directoryName || ''));
         
         // 更新配置中的授权目录名
         const config = comfyUIService.getConfig();
@@ -116,7 +118,7 @@ export default function ComfyUIConfig() {
         setAuthorizedPath(result.directoryName || null);
         setConfigChanged(false); // 已保存，重置变更标志
       } else {
-        setSaveMessage('获取目录访问权限失败');
+        setSaveMessage(dict.status.accessFailed);
       }
       
       setTimeout(() => {
@@ -124,7 +126,7 @@ export default function ComfyUIConfig() {
       }, 3000);
     } catch (error: any) {
       console.error('请求授权出错:', error);
-      setSaveMessage(`授权失败: ${error.message}`);
+      setSaveMessage(dict.status.authError.replace('{message}', error.message));
       
       setTimeout(() => {
         setSaveMessage('');
@@ -163,7 +165,7 @@ export default function ComfyUIConfig() {
     } catch (error: any) {
       setConnectionStatus({
         status: false,
-        message: error.message || '连接测试失败'
+        message: error.message || dict.status.connectionFailed.replace('{message}', '')
       });
     } finally {
       setIsTesting(false);
@@ -177,49 +179,47 @@ export default function ComfyUIConfig() {
   
   return (
     <main className="config-page">
-      <h1>ComfyUI 配置</h1>
+      <h1>{dict.config.comfyuiTitle}</h1>
       
       <div className="config-form">
-        <h2>服务器设置</h2>
+        <h2>{dict.config.serverSettings}</h2>
         
         <div className="form-group">
-          <label>ComfyUI 服务器地址</label>
+          <label>{dict.config.comfyuiServer}</label>
           <input
             type="text"
             value={serverUrl}
             onChange={(e) => handleServerUrlChange(e.target.value)}
             onBlur={handleInputBlur}
-            placeholder="http://localhost:8088"
+            placeholder={dict.placeholders.comfyUIServer}
           />
           <p className="input-help">
-            默认为 http://localhost:8088。如果您在其他地址或端口运行ComfyUI，请相应修改。
+            {dict.config.comfyuiServerHelp}
           </p>
         </div>
         
         <div className="form-group">
-          <label>本地工作流文件夹</label>
+          <label>{dict.config.workflowFolder}</label>
           <div className="request-auth-container">
             <button 
               onClick={requestDirectoryAccess} 
               className="request-auth-btn full-width"
               disabled={isRequesting}
             >
-              {isRequesting ? '请求中...' : (authorizedPath ? '更改授权目录' : '选择工作流文件夹')}
+              {isRequesting ? dict.buttons.requesting : (authorizedPath ? dict.buttons.changeFolder : dict.buttons.selectFolder)}
             </button>
           </div>
           
           {/* 显示已授权路径 */}
           {authorizedPath && (
             <div className="authorized-path">
-              <span className="authorized-label">已授权目录:</span> 
+              <span className="authorized-label">{dict.config.authorizedDir}</span> 
               <span className="authorized-value">{authorizedPath}</span>
             </div>
           )}
           
           <p className="input-help">
-            点击上方按钮选择您本地电脑上存储ComfyUI工作流的文件夹。
-            系统会弹出文件选择器让您选择实际的工作流文件夹。您只需授权一次，系统将保存该文件夹访问权限，
-            以后可以直接读取该文件夹下的所有工作流文件，无需再次选择文件夹。
+            {dict.config.workflowFolderHelp}
           </p>
         </div>
         
@@ -228,8 +228,8 @@ export default function ComfyUIConfig() {
           <div className={`connection-status ${connectionStatus.status ? 'success' : 'error'}`}>
             <div className="status-indicator">
               {connectionStatus.status
-                ? `✓ 连接成功：已连接到 ComfyUI ${connectionStatus.data?.cuda?.version || ''}`
-                : `✗ 连接失败：${connectionStatus.message}`}
+                ? dict.status.connectionSuccess.replace('{version}', connectionStatus.data?.cuda?.version || '')
+                : dict.status.connectionFailed.replace('{message}', connectionStatus.message)}
             </div>
           </div>
         )}
@@ -240,39 +240,39 @@ export default function ComfyUIConfig() {
             className="test-button"
             disabled={isTesting || isSaving}
           >
-            {isTesting ? '测试中...' : '测试连接'}
+            {isTesting ? dict.buttons.testing : dict.buttons.testConnection}
           </button>
           
           <button
             onClick={openComfyUI}
             className="open-comfyui-btn"
           >
-            打开ComfyUI
+            {dict.buttons.openComfyUI}
           </button>
         </div>
         
         {saveMessage && (
-          <div className={`save-message ${saveMessage.includes('成功') || saveMessage.includes('保存') ? 'success' : 'error'}`}>
+          <div className={`save-message ${saveMessage.includes('✓') || saveMessage.includes(dict.status.configSaved) ? 'success' : 'error'}`}>
             {saveMessage}
           </div>
         )}
         
         {configChanged && (
           <div className="config-changed-indicator">
-            配置已更改，失去焦点时将自动保存
+            {dict.status.configChanged}
           </div>
         )}
         
         {isSaving && (
           <div className="config-changed-indicator saving-indicator">
-            正在自动保存...
+            {dict.status.autoSaving}
           </div>
         )}
         
         <div className="usage-instructions">
-          <h3>使用说明</h3>
+          <h3>{dict.config.usageInstructions}</h3>
           <p>
-            为了解决跨域限制问题，请按以下步骤设置：
+            {dict.config.corsInstructions}
           </p>
           <ol>
             <li><strong>重要：</strong>启动ComfyUI时必须添加<code>--enable-cors-header</code>参数</li>
@@ -282,12 +282,12 @@ export default function ComfyUIConfig() {
             <li>点击"保存配置"，然后测试连接</li>
           </ol>
           <p className="warning">
-            如果不添加<code>--enable-cors-header</code>参数，将会出现跨域错误，无法直接与ComfyUI通信！
+            {dict.config.corsWarning}
           </p>
           
-          <h4>关于本地工作流文件夹</h4>
+          <h4>{dict.config.workflowFolderInfo}</h4>
           <p>
-            本应用使用现代Web API直接读取您电脑上的工作流文件，具体访问流程如下：
+            {dict.config.accessFlowInfo}
           </p>
           <ol>
             <li>点击"选择工作流文件夹"按钮</li>
@@ -296,8 +296,7 @@ export default function ComfyUIConfig() {
             <li>系统会扫描该文件夹及其所有子文件夹中的JSON文件作为工作流</li>
           </ol>
           <p>
-            授权是持久的，关闭浏览器后再次打开时仍然有效。如果您想切换不同的工作流文件夹，
-            只需点击"更改授权目录"按钮，选择新的文件夹即可。
+            {dict.config.authPersistenceInfo}
           </p>
         </div>
       </div>

@@ -1,0 +1,134 @@
+{
+  "navigation": {
+    "home": "首页",
+    "about": "关于"
+  },
+  "home": {
+    "title": "图片快速排序与重命名工具",
+    "description": "专业的在线图片排序和重命名工具，支持拖拽快速排序、多种重命名规则、批量下载，提高产品图片处理效率。",
+    "dropzone": "拖放图片到此处上传",
+    "renamedImagesTitle": "已重命名图片",
+    "emptyState": "将图片拖放到页面任意位置，或双击页面任意位置选择图片"
+  },
+  "buttons": {
+    "upload": "上传",
+    "download": "下载",
+    "delete": "删除选中",
+    "rename": "应用重命名",
+    "clearCache": "清除缓存",
+    "clearAll": "清空所有图片",
+    "downloadAll": "下载所有重命名图片",
+    "downloadSelected": "下载选中图片",
+    "downloadGroup": "下载此组",
+    "uploadToCloud": "上传到云",
+    "clearSelection": "清除选择",
+    "cancel": "取消",
+    "proceed": "前往编辑",
+    "editWithComfyUI": "使用ComfyUI编辑",
+    "testConnection": "测试连接",
+    "testing": "测试中...",
+    "openComfyUI": "打开ComfyUI",
+    "saveConfig": "保存配置",
+    "saving": "保存中...",
+    "selectFolder": "选择工作流文件夹",
+    "changeFolder": "更改授权目录",
+    "requesting": "请求中..."
+  },
+  "renameOptions": {
+    "amazon": "Amazon模式",
+    "prefixIndex": "前缀-索引模式",
+    "customSequence": "自定义序列模式",
+    "aiGenerated": "AI生成模式"
+  },
+  "formLabels": {
+    "prefix": "前缀",
+    "suffix": "后缀",
+    "customSequence": "自定义序列(使用逗号分隔)",
+    "renameModeLabel": "重命名方式："
+  },
+  "alerts": {
+    "configUpload": "上传功能需要配置上传服务",
+    "configComfyUI": "编辑功能需要配置ComfyUI服务",
+    "workflowProcess": "工作流处理需要配置ComfyUI服务",
+    "uploadConfig": "请先配置上传服务",
+    "comfyUIConfig": "请先配置ComfyUI服务"
+  },
+  "modals": {
+    "workflowTitle": "选择ComfyUI工作流",
+    "workflowLoading": "正在加载工作流列表...",
+    "workflowDefault": "-- 使用默认工作流 --",
+    "workflowEmpty": "未找到可用的工作流，请先在ComfyUI中创建工作流"
+  },
+  "status": {
+    "uploading": "上传中...",
+    "uploadSuccess": "✓ 上传成功",
+    "processing": "正在处理...",
+    "downloading": "下载中...",
+    "configChanged": "配置已更改，失去焦点时将自动保存",
+    "autoSaving": "正在自动保存...",
+    "configSaved": "配置已自动保存",
+    "saveFailed": "保存失败，请重试",
+    "connectionSuccess": "✓ 连接成功：已连接到 ComfyUI {version}",
+    "connectionFailed": "✗ 连接失败：{message}",
+    "accessGranted": "成功获取目录\"{directory}\"的访问权限",
+    "accessFailed": "获取目录访问权限失败",
+    "authError": "授权失败: {message}"
+  },
+  "placeholders": {
+    "amazonSku": "SKU（必填）...",
+    "prefixOptional": "输入前缀（可选）...",
+    "suffixOptional": "输入后缀（可选）...",
+    "customSequenceHint": "自定义序列（必填，用逗号分隔，如：图片1,图片2,图片3）",
+    "comfyUIServer": "http://localhost:8088",
+    "githubToken": "ghp_xxxxxxxxxxxxxxxxxxxx",
+    "githubOwner": "你的GitHub用户名",
+    "githubRepo": "例如: my-images",
+    "customApiUrl": "https://example.com/api/upload",
+    "customApiKey": "你的API密钥"
+  },
+  "selectionInfo": {
+    "selected": "已选择 {count} 张图片",
+    "aiModeTip": "使用AI生成文件名（需要提前配置模型服务）"
+  },
+  "errors": {
+    "saveImagesFailed": "保存图片数据失败，可能是因为图片过大或浏览器不支持IndexedDB。",
+    "saveRenamedFailed": "保存重命名图片数据失败，可能是因为图片过大或浏览器不支持IndexedDB。",
+    "downloadError": "批量下载图片时出错: {message}",
+    "saveConfigError": "保存失败: {message}",
+    "missingGithubFields": "请填写所有GitHub必填项",
+    "missingApiUrl": "请填写自定义服务器API地址"
+  },
+  "config": {
+    "title": "图片上传服务配置",
+    "comfyuiTitle": "ComfyUI 配置",
+    "serviceSelector": "选择上传服务",
+    "githubService": "GitHub",
+    "githubDesc": "将图片上传至GitHub仓库",
+    "customService": "自定义服务器",
+    "customDesc": "上传到自定义API端点",
+    "githubConfig": "GitHub配置",
+    "customConfig": "自定义服务器配置",
+    "githubToken": "个人访问令牌 (Personal Access Token)",
+    "githubTokenHelp": "需要有repo权限的GitHub令牌。",
+    "howToGetToken": "如何获取Token?",
+    "githubOwner": "仓库所有者 (Owner)",
+    "githubRepo": "仓库名称 (Repository Name)",
+    "githubPathInfo": "存储路径将自动使用图片组的前缀名称，无需手动配置。",
+    "apiUrl": "API地址",
+    "apiUrlHelp": "接收图片上传的API地址",
+    "apiKey": "API密钥 (可选)",
+    "apiKeyHelp": "如果API需要认证，请提供密钥",
+    "serverSettings": "服务器设置",
+    "comfyuiServer": "ComfyUI 服务器地址",
+    "comfyuiServerHelp": "默认为 http://localhost:8088。如果您在其他地址或端口运行ComfyUI，请相应修改。",
+    "workflowFolder": "本地工作流文件夹",
+    "authorizedDir": "已授权目录:",
+    "workflowFolderHelp": "点击上方按钮选择您本地电脑上存储ComfyUI工作流的文件夹。系统会弹出文件选择器让您选择实际的工作流文件夹。您只需授权一次，系统将保存该文件夹访问权限，以后可以直接读取该文件夹下的所有工作流文件，无需再次选择文件夹。",
+    "usageInstructions": "使用说明",
+    "corsInstructions": "为了解决跨域限制问题，请按以下步骤设置：",
+    "corsWarning": "如果不添加--enable-cors-header参数，将会出现跨域错误，无法直接与ComfyUI通信！",
+    "workflowFolderInfo": "关于本地工作流文件夹",
+    "accessFlowInfo": "本应用使用现代Web API直接读取您电脑上的工作流文件，具体访问流程如下：",
+    "authPersistenceInfo": "授权是持久的，关闭浏览器后再次打开时仍然有效。如果您想切换不同的工作流文件夹，只需点击\"更改授权目录\"按钮，选择新的文件夹即可。"
+  }
+} 

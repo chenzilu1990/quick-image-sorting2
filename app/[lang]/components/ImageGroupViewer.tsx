@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import type { ImageFile } from '../types';
+import type { ImageFile } from '../../types';
 
 interface UploadResult {
   status: 'uploading' | 'success' | 'error' | 'partial';

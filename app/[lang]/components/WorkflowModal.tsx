@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { Workflow, ImageFile } from '../types';
+import type { Workflow, ImageFile } from '../../types';
+import { useDictionary } from './client-dictionary';
 
 interface WorkflowModalProps {
   isOpen?: boolean;
@@ -27,18 +28,20 @@ export default function WorkflowModal({
   onClose,
   onEditWithComfyUI
 }: WorkflowModalProps) {
+  const dict = useDictionary();
+  
   if (!isOpen) return null;
 
   return (
     <div className="workflow-modal">
       <div className="workflow-modal-content">
         <div className="workflow-modal-header">
-          <h3>选择ComfyUI工作流</h3>
+          <h3>{dict.modals.workflowTitle}</h3>
           <button className="close-modal-btn" onClick={onClose}>×</button>
         </div>
         
         {isLoading ? (
-          <p className="loading-text">正在加载工作流列表...</p>
+          <p className="loading-text">{dict.modals.workflowLoading}</p>
         ) : (
           availableWorkflows.length > 0 ? (
             <div className="workflow-select">
@@ -46,7 +49,7 @@ export default function WorkflowModal({
                 value={selectedWorkflow}
                 onChange={(e) => onWorkflowSelect(e.target.value)}
               >
-                <option value="">-- 使用默认工作流 --</option>
+                <option value="">{dict.modals.workflowDefault}</option>
                 {availableWorkflows.map(workflow => (
                   <option key={workflow.id} value={workflow.id}>
                     {workflow.name} ({new Date(workflow.timestamp * 1000).toLocaleString()})
@@ -55,18 +58,18 @@ export default function WorkflowModal({
               </select>
             </div>
           ) : (
-            <p className="no-workflows">未找到可用的工作流，请先在ComfyUI中创建工作流</p>
+            <p className="no-workflows">{dict.modals.workflowEmpty}</p>
           )
         )}
         
         <div className="workflow-modal-footer">
-          <button onClick={onClose} className="cancel-btn">取消</button>
+          <button onClick={onClose} className="cancel-btn">{dict.buttons.cancel}</button>
           <button 
             onClick={onEditWithComfyUI} 
             className="proceed-btn"
             disabled={isLoading}
           >
-            前往编辑
+            {dict.buttons.proceed}
           </button>
         </div>
       </div>

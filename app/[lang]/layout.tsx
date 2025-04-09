@@ -1,7 +1,9 @@
 import { ReactNode } from 'react';
 import { Metadata, Viewport } from 'next';
-import Sidebar from '@/app/components/Sidebar';
-import './globals.css';
+import Sidebar from '@/app/[lang]/components/Sidebar';
+import '../globals.css';
+import { i18n } from '../i18n/settings';
+import type { Locale } from '../i18n/settings';
 
 // 从环境变量获取网站信息
 const siteName = process.env.NEXT_PUBLIC_SITE_NAME || '图片快速排序与重命名工具';
@@ -14,35 +16,46 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export const metadata: Metadata = {
-  title: `${siteName}`,
-  description: siteDescription,
-  keywords: siteKeywords,
-  robots: 'index, follow',
-  authors: [{ name: siteName }],
-  openGraph: {
-    title: `${siteName} | 在线图片排序软件`,
+// 这里不再定义静态元数据，而是通过生成函数以支持动态语言
+export async function generateMetadata({ params }: { params: { lang: Locale } }) {
+  const locale = params.lang;
+
+  return {
+    title: `${siteName}`,
     description: siteDescription,
-    type: 'website',
-    locale: 'zh_CN',
-    images: [
-      {
-        url: '/og-image.jpg',
-        width: 1200,
-        height: 630,
-        alt: siteName,
-      }
-    ]
-  },
-};
+    keywords: siteKeywords,
+    robots: 'index, follow',
+    authors: [{ name: siteName }],
+    openGraph: {
+      title: `${siteName} | 在线图片排序软件`,
+      description: siteDescription,
+      type: 'website',
+      locale: locale === 'en' ? 'en_US' : 'zh_CN',
+      images: [
+        {
+          url: '/og-image.jpg',
+          width: 1200,
+          height: 630,
+          alt: siteName,
+        }
+      ]
+    },
+  };
+}
+
+// 为了支持静态生成，添加generateStaticParams函数
+export async function generateStaticParams() {
+  return i18n.locales.map((locale) => ({ lang: locale }));
+}
 
 interface RootLayoutProps {
   children: ReactNode;
+  params: { lang: Locale };
 }
 
-export default function RootLayout({ children }: RootLayoutProps) {
+export default function RootLayout({ children, params }: RootLayoutProps) {
   return (
-    <html lang="zh">
+    <html lang={params.lang}>
       <head>
         <link rel="canonical" href={siteUrl} />
         {/* 如果配置了Google Analytics */}
@@ -64,7 +77,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
       </head>
       <body>
         <div className="main-layout">
-          <Sidebar />
+          <Sidebar lang={params.lang} />
           <div className="content-container">
             {children}
           </div>

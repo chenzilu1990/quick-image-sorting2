@@ -2,7 +2,7 @@
 
 import React, { useCallback, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { useDropzone } from 'react-dropzone';
-import type { ImageFile, SimpleFile } from '../types';
+import type { ImageFile, SimpleFile } from '../../types';
 
 // 组件引用类型
 export interface ImageDropzoneRef {

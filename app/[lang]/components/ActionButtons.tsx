@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useDictionary } from './client-dictionary';
 
 interface ActionButtonsProps {
   selectedCount: number;
@@ -24,16 +25,18 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   onDownloadOrder,
   onDownloadSelected
 }) => {
+  const dict = useDictionary();
+  
   return (
     <div className="actions">
       <button onClick={onClearImages} className="action-btn clear-btn">
-        清空所有图片
+        {dict.buttons.clearAll}
       </button>
       <button onClick={onDeleteSelected} className="action-btn delete-btn" disabled={selectedCount === 0}>
-        删除选中图片
+        {dict.buttons.delete}
       </button>
       <button onClick={onDownloadOrder} className="action-btn">
-        下载排序结果
+        {dict.buttons.download}
       </button>
       {selectedCount > 0 && (
         <button 
@@ -41,7 +44,9 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
           disabled={selectedCount === 0 || isDownloading}
           className="action-btn download-btn"
         >
-          {isDownloading ? '下载中...' : `下载选中图片 (${selectedCount})`}
+          {isDownloading 
+            ? dict.status.downloading 
+            : `${dict.buttons.downloadSelected} (${selectedCount})`}
         </button>
       )}
     </div>

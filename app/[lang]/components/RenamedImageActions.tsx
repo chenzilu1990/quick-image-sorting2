@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useDictionary } from './client-dictionary';
 
 interface RenamedImageActionsProps {
   isDownloading: boolean;
@@ -18,6 +19,8 @@ const RenamedImageActions: React.FC<RenamedImageActionsProps> = ({
   onDownloadRenamedImages,
   onClearRenamedImages
 }) => {
+  const dict = useDictionary();
+  
   return (
     <div className="renamed-actions">
       <button 
@@ -25,14 +28,14 @@ const RenamedImageActions: React.FC<RenamedImageActionsProps> = ({
         disabled={isDownloading}
         className="action-btn download-btn"
       >
-        {isDownloading ? '下载中...' : '下载所有重命名图片'}
+        {isDownloading ? dict.status.downloading : dict.buttons.downloadAll}
       </button>
       
       <button 
         onClick={onClearRenamedImages}
         className="action-btn clear-btn"
       >
-        清空重命名图片
+        {dict.buttons.clearCache}
       </button>
     </div>
   );

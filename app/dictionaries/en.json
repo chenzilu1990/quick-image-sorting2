@@ -1,0 +1,134 @@
+{
+  "navigation": {
+    "home": "Home",
+    "about": "About"
+  },
+  "home": {
+    "title": "Image Sorting and Renaming Tool",
+    "description": "Professional online image sorting and renaming tool, supporting drag-and-drop sorting, multiple renaming rules, batch downloading, improving product image processing efficiency.",
+    "dropzone": "Drop images here to upload",
+    "renamedImagesTitle": "Renamed Images",
+    "emptyState": "Drag and drop images anywhere or double-click to select images"
+  },
+  "buttons": {
+    "upload": "Upload",
+    "download": "Download",
+    "delete": "Delete Selected",
+    "rename": "Apply Rename",
+    "clearCache": "Clear Cache",
+    "clearAll": "Clear All Images",
+    "downloadAll": "Download All Renamed Images",
+    "downloadSelected": "Download Selected Images",
+    "downloadGroup": "Download This Group",
+    "uploadToCloud": "Upload to Cloud",
+    "clearSelection": "Clear Selection",
+    "cancel": "Cancel",
+    "proceed": "Proceed to Edit",
+    "editWithComfyUI": "Edit with ComfyUI",
+    "testConnection": "Test Connection",
+    "testing": "Testing...",
+    "openComfyUI": "Open ComfyUI",
+    "saveConfig": "Save Configuration",
+    "saving": "Saving...",
+    "selectFolder": "Select Workflow Folder",
+    "changeFolder": "Change Authorized Directory",
+    "requesting": "Requesting..."
+  },
+  "renameOptions": {
+    "amazon": "Amazon Mode",
+    "prefixIndex": "Prefix-Index Mode",
+    "customSequence": "Custom Sequence Mode",
+    "aiGenerated": "AI Generated Mode"
+  },
+  "formLabels": {
+    "prefix": "Prefix",
+    "suffix": "Suffix",
+    "customSequence": "Custom Sequence (comma separated)",
+    "renameModeLabel": "Rename Mode:"
+  },
+  "alerts": {
+    "configUpload": "Upload function requires upload service configuration",
+    "configComfyUI": "Edit function requires ComfyUI service configuration",
+    "workflowProcess": "Workflow processing requires ComfyUI service configuration",
+    "uploadConfig": "Please configure upload service first",
+    "comfyUIConfig": "Please configure ComfyUI service first"
+  },
+  "modals": {
+    "workflowTitle": "Select ComfyUI Workflow",
+    "workflowLoading": "Loading workflow list...",
+    "workflowDefault": "-- Use Default Workflow --",
+    "workflowEmpty": "No available workflows found, please create a workflow in ComfyUI first"
+  },
+  "status": {
+    "uploading": "Uploading...",
+    "uploadSuccess": "✓ Upload Successful",
+    "processing": "Processing...",
+    "downloading": "Downloading...",
+    "configChanged": "Configuration changed, will save automatically when focus is lost",
+    "autoSaving": "Auto saving...",
+    "configSaved": "Configuration saved automatically",
+    "saveFailed": "Save failed, please try again",
+    "connectionSuccess": "✓ Connection successful: Connected to ComfyUI {version}",
+    "connectionFailed": "✗ Connection failed: {message}",
+    "accessGranted": "Successfully granted access to directory \"{directory}\"",
+    "accessFailed": "Failed to get directory access permission",
+    "authError": "Authorization failed: {message}"
+  },
+  "placeholders": {
+    "amazonSku": "SKU (Required)...",
+    "prefixOptional": "Enter prefix (Optional)...",
+    "suffixOptional": "Enter suffix (Optional)...",
+    "customSequenceHint": "Custom sequence (Required, comma-separated, e.g.: Image1,Image2,Image3)",
+    "comfyUIServer": "http://localhost:8088",
+    "githubToken": "ghp_xxxxxxxxxxxxxxxxxxxx",
+    "githubOwner": "Your GitHub username",
+    "githubRepo": "Example: my-images",
+    "customApiUrl": "https://example.com/api/upload",
+    "customApiKey": "Your API key"
+  },
+  "selectionInfo": {
+    "selected": "Selected {count} images",
+    "aiModeTip": "Use AI to generate filenames (AI service configuration required)"
+  },
+  "errors": {
+    "saveImagesFailed": "Failed to save image data, possibly due to large image size or lack of IndexedDB support.",
+    "saveRenamedFailed": "Failed to save renamed image data, possibly due to large image size or lack of IndexedDB support.",
+    "downloadError": "Error downloading images: {message}",
+    "saveConfigError": "Save failed: {message}",
+    "missingGithubFields": "Please fill in all required GitHub fields",
+    "missingApiUrl": "Please enter the custom server API URL"
+  },
+  "config": {
+    "title": "Image Upload Service Configuration",
+    "comfyuiTitle": "ComfyUI Configuration",
+    "serviceSelector": "Select Upload Service",
+    "githubService": "GitHub",
+    "githubDesc": "Upload images to a GitHub repository",
+    "customService": "Custom Server",
+    "customDesc": "Upload to a custom API endpoint",
+    "githubConfig": "GitHub Configuration",
+    "customConfig": "Custom Server Configuration",
+    "githubToken": "Personal Access Token",
+    "githubTokenHelp": "Requires a GitHub token with repo permissions.",
+    "howToGetToken": "How to get a token?",
+    "githubOwner": "Repository Owner",
+    "githubRepo": "Repository Name",
+    "githubPathInfo": "Storage path will automatically use the prefix name of the image group, no manual configuration needed.",
+    "apiUrl": "API URL",
+    "apiUrlHelp": "API URL that receives image uploads",
+    "apiKey": "API Key (Optional)",
+    "apiKeyHelp": "Provide a key if your API requires authentication",
+    "serverSettings": "Server Settings",
+    "comfyuiServer": "ComfyUI Server Address",
+    "comfyuiServerHelp": "Default is http://localhost:8088. Modify if you're running ComfyUI on a different address or port.",
+    "workflowFolder": "Local Workflow Folder",
+    "authorizedDir": "Authorized Directory:",
+    "workflowFolderHelp": "Click the button above to select the folder on your local computer where ComfyUI workflows are stored. The system will open a file picker to select the actual workflow folder. You only need to authorize once, and the system will save this folder access permission to directly read all workflow files in that folder without needing to select it again.",
+    "usageInstructions": "Usage Instructions",
+    "corsInstructions": "To solve cross-origin restrictions, follow these steps:",
+    "corsWarning": "If you don't add the --enable-cors-header parameter, you'll encounter cross-origin errors and won't be able to communicate directly with ComfyUI!",
+    "workflowFolderInfo": "About Local Workflow Folder",
+    "accessFlowInfo": "This application uses modern Web APIs to directly read workflow files on your computer. The access process is as follows:",
+    "authPersistenceInfo": "Authorization is persistent and remains valid even after you close and reopen your browser. If you want to switch to a different workflow folder, simply click the \"Change Authorized Directory\" button and select a new folder."
+  }
+} 

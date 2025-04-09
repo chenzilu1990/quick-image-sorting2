@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useDictionary } from '../components/client-dictionary';
 
 // 定义配置更新值的接口
 interface ConfigUpdateValues {
@@ -13,7 +13,9 @@ interface ConfigUpdateValues {
   selectedService?: string;
 }
 
-export default function Config() {
+export default function ConfigClient() {
+  const dict = useDictionary();
+  
   // GitHub配置
   const [githubToken, setGithubToken] = useState('');
   const [githubRepo, setGithubRepo] = useState('');
@@ -90,12 +92,12 @@ export default function Config() {
       
       localStorage.setItem('imageUploaderConfig', JSON.stringify(config));
       
-      setSaveMessage('配置已自动保存');
+      setSaveMessage(dict.status.configSaved);
       setConfigChanged(false);
       setTimeout(() => setSaveMessage(''), 1500);
     } catch (error) {
       console.error('保存配置出错:', error);
-      setSaveMessage('保存失败，请重试');
+      setSaveMessage(dict.status.saveFailed);
     } finally {
       setIsSaving(false);
     }
@@ -144,13 +146,13 @@ export default function Config() {
   // 测试连接
   const testConnection = async () => {
     setIsSaving(true);
-    setSaveMessage('正在测试连接...');
+    setSaveMessage(dict.buttons.testing);
     
     try {
       if (selectedService === 'github') {
         // 测试GitHub API连接
         if (!githubToken || !githubRepo || !githubOwner) {
-          setSaveMessage('请填写所有GitHub必填项');
+          setSaveMessage(dict.errors.missingGithubFields);
           return;
         }
         
@@ -162,15 +164,15 @@ export default function Config() {
         });
         
         if (response.ok) {
-          setSaveMessage('GitHub连接成功！');
+          setSaveMessage(dict.status.connectionSuccess.replace('{version}', ''));
         } else {
           const errorData = await response.json();
-          setSaveMessage(`GitHub连接失败: ${errorData.message || response.statusText}`);
+          setSaveMessage(dict.status.connectionFailed.replace('{message}', errorData.message || response.statusText));
         }
       } else if (selectedService === 'custom') {
         // 测试自定义API连接
         if (!customApiUrl) {
-          setSaveMessage('请填写自定义服务器API地址');
+          setSaveMessage(dict.errors.missingApiUrl);
           return;
         }
         
@@ -181,14 +183,14 @@ export default function Config() {
         });
         
         if (response.ok) {
-          setSaveMessage('自定义服务器连接成功！');
+          setSaveMessage(dict.status.connectionSuccess.replace('{version}', ''));
         } else {
-          setSaveMessage(`自定义服务器连接失败: ${response.statusText}`);
+          setSaveMessage(dict.status.connectionFailed.replace('{message}', response.statusText));
         }
       }
     } catch (error) {
       console.error('测试连接出错:', error);
-      setSaveMessage(`连接测试失败: ${error instanceof Error ? error.message : '未知错误'}`);
+      setSaveMessage(dict.status.connectionFailed.replace('{message}', error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setIsSaving(false);
     }
@@ -196,11 +198,11 @@ export default function Config() {
   
   return (
     <main className="config-page">
-      <h1>图片上传服务配置</h1>
+      <h1>{dict.config.title}</h1>
       
       <div className="config-form">
         <div className="service-selector">
-          <h2>选择上传服务</h2>
+          <h2>{dict.config.serviceSelector}</h2>
           <div className="service-options">
             <label className={`service-option ${selectedService === 'github' ? 'selected' : ''}`}>
               <input
@@ -210,8 +212,8 @@ export default function Config() {
                 checked={selectedService === 'github'}
                 onChange={() => handleServiceChange('github')}
               />
-              <span className="service-name">GitHub</span>
-              <span className="service-description">将图片上传至GitHub仓库</span>
+              <span className="service-name">{dict.config.githubService}</span>
+              <span className="service-description">{dict.config.githubDesc}</span>
             </label>
             
             <label className={`service-option ${selectedService === 'custom' ? 'selected' : ''}`}>
@@ -222,51 +224,51 @@ export default function Config() {
                 checked={selectedService === 'custom'}
                 onChange={() => handleServiceChange('custom')}
               />
-              <span className="service-name">自定义服务器</span>
-              <span className="service-description">上传到自定义API端点</span>
+              <span className="service-name">{dict.config.customService}</span>
+              <span className="service-description">{dict.config.customDesc}</span>
             </label>
           </div>
         </div>
         
         {selectedService === 'github' && (
           <div className="github-config">
-            <h2>GitHub配置</h2>
+            <h2>{dict.config.githubConfig}</h2>
             
             <div className="form-group">
-              <label>个人访问令牌 (Personal Access Token)</label>
+              <label>{dict.config.githubToken}</label>
               <input
                 type="password"
                 value={githubToken}
                 onChange={(e) => handleGithubTokenChange(e.target.value)}
-                placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                placeholder={dict.placeholders.githubToken}
                 onBlur={handleInputBlur}
               />
               <p className="input-help">
-                需要有repo权限的GitHub令牌。
+                {dict.config.githubTokenHelp}
                 <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer">
-                  如何获取Token?
+                  {dict.config.howToGetToken}
                 </a>
               </p>
             </div>
             
             <div className="form-group">
-              <label>仓库所有者 (Owner)</label>
+              <label>{dict.config.githubOwner}</label>
               <input
                 type="text"
                 value={githubOwner}
                 onChange={(e) => handleGithubOwnerChange(e.target.value)}
-                placeholder="你的GitHub用户名"
+                placeholder={dict.placeholders.githubOwner}
                 onBlur={handleInputBlur}
               />
             </div>
             
             <div className="form-group">
-              <label>仓库名称 (Repository Name)</label>
+              <label>{dict.config.githubRepo}</label>
               <input
                 type="text"
                 value={githubRepo}
                 onChange={(e) => handleGithubRepoChange(e.target.value)}
-                placeholder="例如: my-images"
+                placeholder={dict.placeholders.githubRepo}
                 onBlur={handleInputBlur}
               />
             </div>
@@ -274,7 +276,7 @@ export default function Config() {
             <div className="path-info">
               <p className="info-text">
                 <span className="info-icon">ℹ️</span> 
-                存储路径将自动使用图片组的前缀名称，无需手动配置。
+                {dict.config.githubPathInfo}
               </p>
             </div>
           </div>
@@ -282,49 +284,49 @@ export default function Config() {
         
         {selectedService === 'custom' && (
           <div className="custom-server-config">
-            <h2>自定义服务器配置</h2>
+            <h2>{dict.config.customConfig}</h2>
             
             <div className="form-group">
-              <label>API地址</label>
+              <label>{dict.config.apiUrl}</label>
               <input
                 type="text"
                 value={customApiUrl}
                 onChange={(e) => handleCustomApiUrlChange(e.target.value)}
-                placeholder="https://example.com/api/upload"
+                placeholder={dict.placeholders.customApiUrl}
                 onBlur={handleInputBlur}
               />
-              <p className="input-help">接收图片上传的API地址</p>
+              <p className="input-help">{dict.config.apiUrlHelp}</p>
             </div>
             
             <div className="form-group">
-              <label>API密钥 (可选)</label>
+              <label>{dict.config.apiKey}</label>
               <input
                 type="password"
                 value={customApiKey}
                 onChange={(e) => handleCustomApiKeyChange(e.target.value)}
-                placeholder="你的API密钥"
+                placeholder={dict.placeholders.customApiKey}
                 onBlur={handleInputBlur}
               />
-              <p className="input-help">如果API需要认证，请提供密钥</p>
+              <p className="input-help">{dict.config.apiKeyHelp}</p>
             </div>
           </div>
         )}
         
         {saveMessage && (
-          <div className={`save-message ${saveMessage.includes('成功') ? 'success' : 'error'}`}>
+          <div className={`save-message ${saveMessage.includes('✓') ? 'success' : 'error'}`}>
             {saveMessage}
           </div>
         )}
         
         {configChanged && !isSaving && (
           <div className="config-changed-indicator">
-            配置已更改，失去焦点时将自动保存
+            {dict.status.configChanged}
           </div>
         )}
         
         {isSaving && (
           <div className="config-changed-indicator saving-indicator">
-            正在自动保存...
+            {dict.status.autoSaving}
           </div>
         )}
         
@@ -334,7 +336,7 @@ export default function Config() {
             className="test-button"
             disabled={isSaving}
           >
-            {isSaving && saveMessage.includes('测试') ? '测试中...' : '测试连接'}
+            {isSaving && saveMessage.includes(dict.buttons.testing) ? dict.buttons.testing : dict.buttons.testConnection}
           </button>
         </div>
       </div>

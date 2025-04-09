@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect } from 'react';
-import type { ImageFile, RenameMode } from '../types';
+import type { ImageFile, RenameMode } from '../../types';
 import PrefixInputForm from './PrefixInputForm';
 
 interface SelectedImagesScrollerProps {
