@@ -49,7 +49,8 @@
     "prefix": "Prefix",
     "suffix": "Suffix",
     "customSequence": "Custom Sequence (comma separated)",
-    "renameModeLabel": "Rename Mode:"
+    "renameModeLabel": "Rename Mode:",
+    "preview": "Preview:"
   },
   "alerts": {
     "configUpload": "Upload function requires upload service configuration",
@@ -89,7 +90,8 @@
     "githubOwner": "Your GitHub username",
     "githubRepo": "Example: my-images",
     "customApiUrl": "https://example.com/api/upload",
-    "customApiKey": "Your API key"
+    "customApiKey": "Your API key",
+    "aiPreview": "AI-Generated-Example.jpg"
   },
   "selectionInfo": {
     "selected": "Selected {count} images",

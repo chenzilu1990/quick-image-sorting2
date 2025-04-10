@@ -49,7 +49,8 @@
     "prefix": "前缀",
     "suffix": "后缀",
     "customSequence": "自定义序列(使用逗号分隔)",
-    "renameModeLabel": "重命名方式："
+    "renameModeLabel": "重命名方式：",
+    "preview": "预览："
   },
   "alerts": {
     "configUpload": "上传功能需要配置上传服务",
@@ -89,7 +90,8 @@
     "githubOwner": "你的GitHub用户名",
     "githubRepo": "例如: my-images",
     "customApiUrl": "https://example.com/api/upload",
-    "customApiKey": "你的API密钥"
+    "customApiKey": "你的API密钥",
+    "aiPreview": "AI生成名称示例.jpg"
   },
   "selectionInfo": {
     "selected": "已选择 {count} 张图片",

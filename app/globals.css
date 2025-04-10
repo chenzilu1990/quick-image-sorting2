@@ -551,7 +551,7 @@ button,
 .rename-options {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 10px 15px;
   align-items: center;
   width: 100%;
   max-width: 1200px;
@@ -578,9 +578,15 @@ button,
   font-size: 14px;
 }
 
+.rename-inputs {
+  display: flex;
+  gap: 10px;
+  flex-grow: 1;
+  flex-wrap: wrap;
+}
+
 .prefix-container, .suffix-container, .custom-sequence-container {
-  flex: 1;
-  min-width: 150px;
+  flex: 1 1 150px;
 }
 
 .prefix-input, .suffix-input, .custom-sequence-input {
@@ -615,6 +621,62 @@ button,
   color: #0d47a1;
 }
 
+.rename-preview {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 12px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+  min-width: 200px;
+  flex-basis: 250px;
+  flex-grow: 0;
+}
+
+.rename-preview label {
+  font-weight: 600;
+  color: #555;
+  white-space: nowrap;
+}
+
+.preview-filename {
+  font-family: monospace;
+  color: #333;
+  background-color: #fff;
+  padding: 2px 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-grow: 1;
+}
+
+.apply-button {
+  margin-left: auto;
+  white-space: nowrap;
+  background-color: #ff9800;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  padding: 8px 16px;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.apply-button:hover {
+  background-color: #f57c00;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.apply-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 .sidebar.collapsed ~ .content-container .floating-prefix-form {
   margin-left: 60px;
 }
@@ -622,20 +684,6 @@ button,
 @keyframes slideDown {
   from { transform: translateY(-100%); }
   to { transform: translateY(0); }
-}
-
-.apply-button {
-  background-color: #ff9800;
-  font-weight: bold;
-  transition: all 0.3s ease;
-  white-space: nowrap;
-  padding: 8px 16px;
-}
-
-.apply-button:hover {
-  background-color: #f57c00;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* 页面级拖拽样式 */
