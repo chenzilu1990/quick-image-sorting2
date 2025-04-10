@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { Workflow, ImageFile } from '../../types';
+import type { Workflow, ImageFile } from '../types';
 import { useDictionary } from './client-dictionary';
 
 interface WorkflowModalProps {

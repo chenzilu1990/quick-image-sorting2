@@ -2,15 +2,15 @@
 
 import { createContext, useContext, ReactNode } from 'react';
 
-// 创建一个上下文用于存储字典
-export const DictionaryContext = createContext<{ [key: string]: any } | null>(null);
+// 创建字典上下文
+export const DictionaryContext = createContext<Record<string, any>>({});
 
 // 字典提供者组件
 export function DictionaryProvider({
   dictionary,
   children,
 }: {
-  dictionary: { [key: string]: any };
+  dictionary: Record<string, any>;
   children: ReactNode;
 }) {
   return (
@@ -20,11 +20,12 @@ export function DictionaryProvider({
   );
 }
 
-// 使用字典的Hook
+// 客户端使用字典的Hook
 export function useDictionary() {
   const dictionary = useContext(DictionaryContext);
   if (!dictionary) {
-    throw new Error('useDictionary must be used within a DictionaryProvider');
+    console.warn('字典上下文未找到，返回空对象');
+    return {}; // 降级处理，避免应用崩溃
   }
   return dictionary;
 } 

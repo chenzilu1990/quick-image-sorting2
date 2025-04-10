@@ -1,11 +1,11 @@
 import { ReactNode } from 'react';
 import { Metadata, Viewport } from 'next';
-import Sidebar from '@/app/[lang]/components/Sidebar';
+import Sidebar from '../components/Sidebar';
 import '../globals.css';
 import { i18n } from '../i18n/settings';
 import type { Locale } from '../i18n/settings';
 import { getDictionary } from '../i18n/dictionaries';
-import { DictionaryProvider } from './components/client-dictionary';
+import { DictionaryProvider } from '../components/client-dictionary';
 
 // 从环境变量获取网站信息
 const siteName = process.env.NEXT_PUBLIC_SITE_NAME || '图片快速排序与重命名工具';
@@ -56,7 +56,7 @@ interface RootLayoutProps {
 }
 
 export default async function RootLayout({ children, params }: RootLayoutProps) {
-  // 获取字典，以便给侧边栏提供国际化文本
+  // 服务器端获取字典
   const dictionary = await getDictionary(params.lang);
   
   return (
@@ -81,6 +81,7 @@ export default async function RootLayout({ children, params }: RootLayoutProps) 
         )}
       </head>
       <body>
+        {/* 全应用范围的字典提供者 */}
         <DictionaryProvider dictionary={dictionary}>
           <div className="main-layout">
             <Sidebar lang={params.lang} />

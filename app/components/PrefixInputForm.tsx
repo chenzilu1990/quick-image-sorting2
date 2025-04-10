@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { RenameMode } from '../../types';
+import { RenameMode } from '../types';
 import { useDictionary } from './client-dictionary';
 
 interface PrefixInputFormProps {

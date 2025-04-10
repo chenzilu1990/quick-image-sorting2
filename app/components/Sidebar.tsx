@@ -4,23 +4,23 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import LanguageSwitcher from './LanguageSwitcher';
-import { Locale } from '../../i18n/settings';
+import { Locale } from '../i18n/settings';
 import { useDictionary } from './client-dictionary';
 
 export default function Sidebar({ lang }: { lang: Locale }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname();
   const dict = useDictionary();
-
+  
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
   };
 
   return (
     <div className={`sidebar ${isCollapsed ? 'collapsed' : 'expanded'}`}>
-      <button className="sidebar-toggle" onClick={toggleSidebar} title={dict.navigation.toggleSidebar}>
+      {/* <button className="sidebar-toggle" onClick={toggleSidebar} title={dict.navigation.toggleSidebar}>
         {isCollapsed ? '→' : '←'}
-      </button>
+      </button> */}
       
       <div className="sidebar-content">
         <h2 className="sidebar-title">{dict.navigation.sidebarTitle}</h2>

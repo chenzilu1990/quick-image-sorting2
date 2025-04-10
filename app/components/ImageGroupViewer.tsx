@@ -3,9 +3,9 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { ImageFile } from '../../types';
+import type { ImageFile } from '../types';
 import { useDictionary } from './client-dictionary';
-import { Locale } from '../../i18n/settings';
+import { Locale } from '../i18n/settings';
 
 interface UploadResult {
   status: 'uploading' | 'success' | 'error' | 'partial';

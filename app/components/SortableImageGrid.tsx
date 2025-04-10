@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useCallback, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
-import type { ImageFile } from '../../types';
+import type { ImageFile } from '../types';
 
 // 可排序网格引用类型
 export interface SortableImageGridRef {

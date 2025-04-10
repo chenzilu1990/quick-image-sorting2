@@ -11,7 +11,7 @@ function getLocale(request: NextRequest): string {
 
   // 使用 Negotiator 获取最佳匹配的语言
   const languages = new Negotiator({ headers: negotiatorHeaders }).languages();
-  
+
   // 使用 intl-localematcher 从支持的语言中匹配最佳语言
   return match(languages, i18n.locales, i18n.defaultLocale);
 }
@@ -51,7 +51,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // 排除内部路径和静态资源
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    // 排除内部路径、静态资源和根目录下的特殊文件
+    '/((?!api|_next/static|_next/image|favicon\.ico|sitemap\.xml|robots\.txt).*)',
   ],
 }; 

@@ -2,7 +2,7 @@
 
 import React, { useRef } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
-import type { ImageFile } from '../../types';
+import type { ImageFile } from '../types';
 
 // 图片项类型
 const ItemType = 'IMAGE';
