@@ -275,11 +275,11 @@ export default function ComfyUIConfigClient() {
             {dict.config.corsInstructions}
           </p>
           <ol>
-            <li><strong>重要：</strong>启动ComfyUI时必须添加<code>--enable-cors-header</code>参数</li>
-            <li>例如：<code>python main.py --enable-cors-header</code></li>
-            <li>设置正确的ComfyUI服务器地址</li>
-            <li>填写您存储ComfyUI工作流文件的本地文件夹路径</li>
-            <li>点击"保存配置"，然后测试连接</li>
+            <li><strong>{dict.config.stepsList.important.split('：')[0]}：</strong>{dict.config.stepsList.important.split('：')[1]}</li>
+            <li>{dict.config.stepsList.example}</li>
+            <li>{dict.config.stepsList.setServer}</li>
+            <li>{dict.config.stepsList.setFolder}</li>
+            <li>{dict.config.stepsList.saveAndTest}</li>
           </ol>
           <p className="warning">
             {dict.config.corsWarning}
@@ -290,10 +290,10 @@ export default function ComfyUIConfigClient() {
             {dict.config.accessFlowInfo}
           </p>
           <ol>
-            <li>点击"选择工作流文件夹"按钮</li>
-            <li>在弹出的文件选择器中，选择您存储ComfyUI工作流文件的实际文件夹</li>
-            <li>授权后，系统会记住您的选择，后续将自动读取该文件夹中的所有JSON文件</li>
-            <li>系统会扫描该文件夹及其所有子文件夹中的JSON文件作为工作流</li>
+            <li>{dict.config.accessStepsList.clickButton}</li>
+            <li>{dict.config.accessStepsList.selectFolder}</li>
+            <li>{dict.config.accessStepsList.remember}</li>
+            <li>{dict.config.accessStepsList.scan}</li>
           </ol>
           <p>
             {dict.config.authPersistenceInfo}

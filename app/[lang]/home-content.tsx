@@ -677,7 +677,7 @@ export default function HomeContent({ params }: { params: { lang: Locale } }) {
       
       {renamedImages.length > 0 && (
         <div className="renamed-images-container">
-          <h3>{dict.home.renamedImagesTitle || '已重命名图片'}</h3>
+
           <ImageGroupViewer 
             groups={createImageGroups()}
             uploadResults={uploadResults}
@@ -691,6 +691,7 @@ export default function HomeContent({ params }: { params: { lang: Locale } }) {
             onUploadGroup={handleUploadGroup}
             onOpenWorkflowModal={openWorkflowModal}
             onImageError={handleImageError}
+            lang={currentLocale}
           />
           <RenamedImageActions 
             isDownloading={isDownloading}

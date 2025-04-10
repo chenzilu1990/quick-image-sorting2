@@ -25,6 +25,10 @@ export default function Sidebar({ lang }: { lang: Locale }) {
       <div className="sidebar-content">
         <h2 className="sidebar-title">{dict.navigation.sidebarTitle}</h2>
         
+        <div className="sidebar-language-switcher">
+          <LanguageSwitcher locale={lang} />
+        </div>
+        
         <nav className="sidebar-nav">
           <ul>
             <li>
@@ -49,7 +53,7 @@ export default function Sidebar({ lang }: { lang: Locale }) {
         </nav>
         
         <div className="sidebar-footer">
-          <LanguageSwitcher locale={lang} />
+          {/* 底部可以添加其他内容 */}
         </div>
       </div>
     </div>

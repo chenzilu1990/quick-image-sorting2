@@ -5,7 +5,8 @@
     "uploadConfig": "上传配置",
     "comfyUIConfig": "ComfyUI配置",
     "sidebarTitle": "图片快速排序",
-    "toggleSidebar": "切换侧边栏"
+    "toggleSidebar": "切换侧边栏",
+    "language": "语言"
   },
   "home": {
     "title": "图片快速排序与重命名工具",
@@ -133,6 +134,19 @@
     "corsWarning": "如果不添加--enable-cors-header参数，将会出现跨域错误，无法直接与ComfyUI通信！",
     "workflowFolderInfo": "关于本地工作流文件夹",
     "accessFlowInfo": "本应用使用现代Web API直接读取您电脑上的工作流文件，具体访问流程如下：",
-    "authPersistenceInfo": "授权是持久的，关闭浏览器后再次打开时仍然有效。如果您想切换不同的工作流文件夹，只需点击\"更改授权目录\"按钮，选择新的文件夹即可。"
+    "authPersistenceInfo": "授权是持久的，关闭浏览器后再次打开时仍然有效。如果您想切换不同的工作流文件夹，只需点击\"更改授权目录\"按钮，选择新的文件夹即可。",
+    "stepsList": {
+      "important": "重要：启动ComfyUI时必须添加--enable-cors-header参数",
+      "example": "例如：python main.py --enable-cors-header",
+      "setServer": "设置正确的ComfyUI服务器地址",
+      "setFolder": "填写您存储ComfyUI工作流文件的本地文件夹路径",
+      "saveAndTest": "点击\"保存配置\"，然后测试连接"
+    },
+    "accessStepsList": {
+      "clickButton": "点击\"选择工作流文件夹\"按钮",
+      "selectFolder": "在弹出的文件选择器中，选择您存储ComfyUI工作流文件的实际文件夹",
+      "remember": "授权后，系统会记住您的选择，后续将自动读取该文件夹中的所有JSON文件",
+      "scan": "系统会扫描该文件夹及其所有子文件夹中的JSON文件作为工作流"
+    }
   }
 } 

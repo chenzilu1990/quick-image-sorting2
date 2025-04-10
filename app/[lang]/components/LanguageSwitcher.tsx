@@ -1,12 +1,14 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { i18n } from '../../i18n/settings';
 import type { Locale } from '../../i18n/settings';
+import { useDictionary } from './client-dictionary';
 
 export default function LanguageSwitcher({ locale }: { locale: Locale }) {
   const pathName = usePathname();
+  const dict = useDictionary();
   
   // 创建重定向到其他语言版本的路径
   const redirectedPathName = (locale: Locale) => {
@@ -20,16 +22,21 @@ export default function LanguageSwitcher({ locale }: { locale: Locale }) {
   };
 
   return (
-    <div className="language-switcher">
-      <ul>
+    <div className="language-select">
+      <label htmlFor="language-select">{dict.navigation.language}:</label>
+      <select 
+        id="language-select" 
+        value={locale}
+        onChange={(e) => {
+          window.location.href = redirectedPathName(e.target.value as Locale);
+        }}
+      >
         {i18n.locales.map((loc) => (
-          <li key={loc} className={locale === loc ? 'active' : ''}>
-            <Link href={redirectedPathName(loc)} locale={loc}>
-              {loc === 'zh' ? '中文' : 'English'}
-            </Link>
-          </li>
+          <option key={loc} value={loc}>
+            {loc === 'zh' ? '中文' : 'English'}
+          </option>
         ))}
-      </ul>
+      </select>
     </div>
   );
 } 

@@ -2,7 +2,10 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import type { ImageFile } from '../../types';
+import { useDictionary } from './client-dictionary';
+import { Locale } from '../../i18n/settings';
 
 interface UploadResult {
   status: 'uploading' | 'success' | 'error' | 'partial';
@@ -29,6 +32,7 @@ interface ImageGroupViewerProps {
   currentEditingImage: ImageFile | null;
   hasConfig: boolean;
   hasComfyUIConfig: boolean;
+  lang: Locale;
   onDownloadGroup: (images: ImageFile[]) => void;
   onUploadGroup: (groupKey: string, images: ImageFile[]) => void;
   onOpenWorkflowModal: (image: ImageFile) => void;
@@ -44,14 +48,18 @@ const ImageGroupViewer: React.FC<ImageGroupViewerProps> = ({
   currentEditingImage,
   hasConfig,
   hasComfyUIConfig,
+  lang,
   onDownloadGroup,
   onUploadGroup,
   onOpenWorkflowModal,
   onImageError
 }) => {
+  const dict = useDictionary();
+  const pathname = usePathname();
+  
   return (
     <div className="renamed-images-section">
-      <h3>已重命名的图片</h3>
+      <h3>{dict.home.renamedImagesTitle}</h3>
       
       {groups.map(([groupKey, group]) => (
         <div key={groupKey} className="renamed-group">
@@ -67,19 +75,19 @@ const ImageGroupViewer: React.FC<ImageGroupViewerProps> = ({
                 onClick={() => onDownloadGroup(group.images)}
                 disabled={isDownloading}
               >
-                {isDownloading ? '下载中...' : '下载此组'}
+                {isDownloading ? dict.status.downloading : dict.buttons.downloadGroup}
               </button>
               
               <button 
                 className="upload-group-btn"
                 onClick={() => onUploadGroup(groupKey, group.images)}
                 disabled={isUploading || !hasConfig}
-                title={!hasConfig ? '请先配置上传服务' : ''}
+                title={!hasConfig ? dict.alerts.uploadConfig : ''}
               >
                 <span className="icon">☁️</span>
                 {uploadResults[groupKey]?.status === 'uploading'
-                  ? '上传中...'
-                  : '上传到云'}
+                  ? dict.status.uploading
+                  : dict.buttons.uploadToCloud}
               </button>
             </div>
           </div>
@@ -90,8 +98,8 @@ const ImageGroupViewer: React.FC<ImageGroupViewerProps> = ({
                 {uploadResults[groupKey] && (
                   <div className={`upload-status ${uploadResults[groupKey].status}`}>
                     <div className="upload-status-content">
-                      {uploadResults[groupKey].status === 'uploading' && '上传中...'}
-                      {uploadResults[groupKey].status === 'success' && '✓ 上传成功'}
+                      {uploadResults[groupKey].status === 'uploading' && dict.status.uploading}
+                      {uploadResults[groupKey].status === 'success' && dict.status.uploadSuccess}
                       {uploadResults[groupKey].status === 'partial' && uploadResults[groupKey].message}
                       {uploadResults[groupKey].status === 'error' && `✗ ${uploadResults[groupKey].message}`}
                     </div>
@@ -101,7 +109,7 @@ const ImageGroupViewer: React.FC<ImageGroupViewerProps> = ({
                 {isProcessingComfyUI && currentEditingImage && currentEditingImage.id === image.id && (
                   <div className="processing-indicator">
                     <div className="spinner"></div>
-                    <div>正在处理...</div>
+                    <div>{dict.status.processing}</div>
                   </div>
                 )}
                 
@@ -117,9 +125,9 @@ const ImageGroupViewer: React.FC<ImageGroupViewerProps> = ({
                   className="edit-comfyui-btn"
                   onClick={() => onOpenWorkflowModal(image)}
                   disabled={!hasComfyUIConfig || isProcessingComfyUI}
-                  title={!hasComfyUIConfig ? '请先配置ComfyUI服务' : '使用ComfyUI编辑图片'}
+                  title={!hasComfyUIConfig ? dict.alerts.comfyUIConfig : ''}
                 >
-                  <span className="icon">🎨</span> 使用ComfyUI编辑
+                  <span className="icon">🎨</span> {dict.buttons.editWithComfyUI}
                 </button>
               </div>
             ))}
@@ -127,18 +135,18 @@ const ImageGroupViewer: React.FC<ImageGroupViewerProps> = ({
           
           {!hasConfig && (
             <div className="config-missing">
-              上传功能需要先配置云服务。 
-              <Link href="/config" className="config-link">
-                <span>前往配置</span>
+              {dict.alerts.configUpload} 
+              <Link href={`/${lang}/config`} className="config-link">
+                <span>{dict.buttons.proceed}</span>
               </Link>
             </div>
           )}
           
           {!hasComfyUIConfig && (
             <div className="config-missing">
-              编辑功能需要先配置ComfyUI。 
-              <Link href="/config/comfyui" className="config-link">
-                <span>前往配置</span>
+              {dict.alerts.configComfyUI} 
+              <Link href={`/${lang}/config/comfyui`} className="config-link">
+                <span>{dict.buttons.proceed}</span>
               </Link>
             </div>
           )}

@@ -5,7 +5,8 @@
     "uploadConfig": "Upload Config",
     "comfyUIConfig": "ComfyUI Config",
     "sidebarTitle": "Image Quick Sort",
-    "toggleSidebar": "Toggle Sidebar"
+    "toggleSidebar": "Toggle Sidebar",
+    "language": "Language"
   },
   "home": {
     "title": "Image Sorting and Renaming Tool",
@@ -133,6 +134,19 @@
     "corsWarning": "If you don't add the --enable-cors-header parameter, you'll encounter cross-origin errors and won't be able to communicate directly with ComfyUI!",
     "workflowFolderInfo": "About Local Workflow Folder",
     "accessFlowInfo": "This application uses modern Web APIs to directly read workflow files on your computer. The access process is as follows:",
-    "authPersistenceInfo": "Authorization is persistent and remains valid even after you close and reopen your browser. If you want to switch to a different workflow folder, simply click the \"Change Authorized Directory\" button and select a new folder."
+    "authPersistenceInfo": "Authorization is persistent and remains valid even after you close and reopen your browser. If you want to switch to a different workflow folder, simply click the \"Change Authorized Directory\" button and select a new folder.",
+    "stepsList": {
+      "important": "Important: You must add the --enable-cors-header parameter when starting ComfyUI",
+      "example": "Example: python main.py --enable-cors-header",
+      "setServer": "Set the correct ComfyUI server address",
+      "setFolder": "Specify the local folder path where your ComfyUI workflow files are stored",
+      "saveAndTest": "Click \"Save Configuration\" and then test the connection"
+    },
+    "accessStepsList": {
+      "clickButton": "Click the \"Select Workflow Folder\" button",
+      "selectFolder": "In the file picker that appears, select the actual folder where your ComfyUI workflow files are stored",
+      "remember": "After authorization, the system will remember your selection and automatically read all JSON files in that folder",
+      "scan": "The system will scan the folder and all its subfolders for JSON files to use as workflows"
+    }
   }
 } 

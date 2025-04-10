@@ -1707,46 +1707,58 @@ ul.workflows {
   }
 }
 
-/* 语言切换器样式 */
-.language-switcher {
-  margin-top: 20px;
-  padding: 10px 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.language-switcher ul {
+/* 语言选择器样式 */
+.language-select {
+  margin: 0 12px 15px;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
   display: flex;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  justify-content: center;
+  align-items: center;
 }
 
-.language-switcher li {
-  margin: 0 5px;
+.language-select label {
+  margin-right: 8px;
+  font-size: 14px;
+  color: #555;
 }
 
-.language-switcher a {
-  display: block;
-  padding: 5px 10px;
-  text-decoration: none;
-  color: #aaa;
+.language-select select {
+  flex: 1;
+  padding: 5px 8px;
   border-radius: 4px;
-  transition: all 0.2s ease;
+  border: 1px solid #ddd;
+  background-color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  min-width: 80px;
 }
 
-.language-switcher li.active a {
-  color: #fff;
-  background-color: rgba(255, 255, 255, 0.1);
+.language-select select:focus {
+  outline: none;
+  border-color: #2196f3;
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
 }
 
-.language-switcher a:hover {
-  color: #fff;
-  background-color: rgba(255, 255, 255, 0.2);
+.sidebar-language-switcher {
+  margin-bottom: 15px;
 }
 
+.sidebar.collapsed .sidebar-language-switcher {
+  display: none;
+}
+
+/* 使侧边栏中的标题和语言选择器在折叠时隐藏 */
+@media (max-width: 768px) {
+  .sidebar.collapsed .sidebar-language-switcher {
+    display: none;
+  }
+}
+
+/* 侧边栏底部样式 */
 .sidebar-footer {
   margin-top: auto;
   padding: 15px 0;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-} 
+}
+
+/* 保持其他样式 */ 
