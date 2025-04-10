@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { RenameMode } from '../../types';
+import { useDictionary } from './client-dictionary';
 
 interface PrefixInputFormProps {
   prefix: string;
@@ -33,6 +34,8 @@ const PrefixInputForm: React.FC<PrefixInputFormProps> = ({
   customSequence,
   onCustomSequenceChange
 }) => {
+  const dict = useDictionary();
+  
   if (selectedCount === 0) return null;
 
   const isAmazonMode = renameMode === RenameMode.AMAZON;
@@ -59,16 +62,16 @@ const PrefixInputForm: React.FC<PrefixInputFormProps> = ({
     // <div className="floating-prefix-form">
       <div className="rename-options">
         <div className="rename-mode-selector">
-          <label>重命名方式：</label>
+          <label>{dict.formLabels.renameModeLabel}</label>
           <select 
             value={renameMode} 
             onChange={(e) => onRenameModeChange(e.target.value as RenameMode)}
             className="rename-mode-select"
           >
-            <option value={RenameMode.AMAZON}>Amazon规则 (MAIN/PT/SWITCH)</option>
-            <option value={RenameMode.PREFIX_INDEX}>前缀-序号-后缀</option>
-            <option value={RenameMode.CUSTOM_SEQUENCE}>自定义序列</option>
-            <option value={RenameMode.AI_GENERATED}>AI生成命名</option>
+            <option value={RenameMode.AMAZON}>{dict.renameOptions.amazon}</option>
+            <option value={RenameMode.PREFIX_INDEX}>{dict.renameOptions.prefixIndex}</option>
+            <option value={RenameMode.CUSTOM_SEQUENCE}>{dict.renameOptions.customSequence}</option>
+            <option value={RenameMode.AI_GENERATED}>{dict.renameOptions.aiGenerated}</option>
           </select>
         </div>
 
@@ -77,7 +80,7 @@ const PrefixInputForm: React.FC<PrefixInputFormProps> = ({
           <div className="prefix-container">
             <input 
               type="text" 
-              placeholder={isAmazonMode ? "SKU（必填）..." : "输入前缀（可选）..."}
+              placeholder={isAmazonMode ? dict.placeholders.amazonSku : dict.placeholders.prefixOptional}
               value={prefix}
               onChange={(e) => onPrefixChange(e.target.value)}
               className="prefix-input"
@@ -90,7 +93,7 @@ const PrefixInputForm: React.FC<PrefixInputFormProps> = ({
           <div className="suffix-container">
             <input 
               type="text" 
-              placeholder="输入后缀（可选）..." 
+              placeholder={dict.placeholders.suffixOptional} 
               value={suffix}
               onChange={(e) => onSuffixChange(e.target.value)}
               className="suffix-input"
@@ -103,7 +106,7 @@ const PrefixInputForm: React.FC<PrefixInputFormProps> = ({
           <div className="custom-sequence-container">
             <input 
               type="text" 
-              placeholder="自定义序列（必填，用逗号分隔，如：图片1,图片2,图片3）" 
+              placeholder={dict.placeholders.customSequenceHint} 
               value={customSequence}
               onChange={(e) => onCustomSequenceChange(e.target.value)}
               className="custom-sequence-input"
@@ -114,7 +117,7 @@ const PrefixInputForm: React.FC<PrefixInputFormProps> = ({
         {/* AI生成模式显示提示 */}
         {isAIGeneratedMode && (
           <div className="ai-mode-info">
-            <span className="ai-mode-tip">使用AI生成文件名（需要提前配置模型服务）</span>
+            <span className="ai-mode-tip">{dict.selectionInfo.aiModeTip}</span>
           </div>
         )}
 
@@ -123,7 +126,7 @@ const PrefixInputForm: React.FC<PrefixInputFormProps> = ({
           disabled={isApplyButtonDisabled()}
           className="apply-button"
         >
-          应用重命名
+          {dict.buttons.rename}
         </button>
       </div>
     // </div>
