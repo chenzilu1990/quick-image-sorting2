@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useDictionary } from '../../components/client-dictionary';
+import { useDictionary } from '@/components/client-dictionary';
 
 // 定义配置更新值的接口
 interface ConfigUpdateValues {

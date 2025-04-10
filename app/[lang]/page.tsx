@@ -1,7 +1,7 @@
-import { getDictionary } from '../i18n/dictionaries';
+import { getDictionary } from '@/i18n/dictionaries';
 import HomeContent from './home-content';
 import PageWrapper from './page-wrapper';
-import { Locale } from '../i18n/settings';
+import { Locale } from '@/i18n/settings';
 
 
 export default async function IndexPage({ params: { lang } }: { params: { lang: Locale } }) {

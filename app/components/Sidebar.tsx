@@ -3,9 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import LanguageSwitcher from './LanguageSwitcher';
-import { Locale } from '../i18n/settings';
-import { useDictionary } from './client-dictionary';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { Locale } from '@/i18n/settings';
+import { useDictionary } from '@/components/client-dictionary';
 
 export default function Sidebar({ lang }: { lang: Locale }) {
   const [isCollapsed, setIsCollapsed] = useState(false);

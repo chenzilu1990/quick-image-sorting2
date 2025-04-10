@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import '../../../globals.css';
-import comfyUIService from '../../../services/comfyuiService';
-import type { ComfyUIConfig } from '../../../types';
-import { useDictionary } from '../../../components/client-dictionary';
+import '@/globals.css';
+import comfyUIService from '@/services/comfyuiService';
+import type { ComfyUIConfig } from '@/types';
+import { useDictionary } from '@/components/client-dictionary';
 
 interface ConnectionStatus {
   status: boolean;
