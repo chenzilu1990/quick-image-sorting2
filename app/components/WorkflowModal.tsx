@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import type { Workflow, ImageFile } from '../types';
 import { useDictionary } from './client-dictionary';
+import { Button } from '../../components/ui/Button';
+import { X } from 'lucide-react';
 
 interface WorkflowModalProps {
   isOpen?: boolean;
@@ -34,10 +36,13 @@ export default function WorkflowModal({
 
   return (
     <div className="workflow-modal">
-      <div className="workflow-modal-content">
+      <div className="workflow-modal-content relative pb-16">
         <div className="workflow-modal-header">
           <h3>{dict.modals.workflowTitle}</h3>
-          <button className="close-modal-btn" onClick={onClose}>×</button>
+          <Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={onClose}>
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </Button>
         </div>
         
         {isLoading ? (
@@ -62,15 +67,15 @@ export default function WorkflowModal({
           )
         )}
         
-        <div className="workflow-modal-footer">
-          <button onClick={onClose} className="cancel-btn">{dict.buttons.cancel}</button>
-          <button 
+        <div className="workflow-modal-footer absolute bottom-0 left-0 right-0 p-4 flex justify-end gap-2 border-t">
+          <Button variant="secondary" onClick={onClose}>{dict.buttons.cancel}</Button>
+          <Button 
+            variant="primary"
             onClick={onEditWithComfyUI} 
-            className="proceed-btn"
             disabled={isLoading}
           >
             {dict.buttons.proceed}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

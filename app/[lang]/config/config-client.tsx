@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useDictionary } from '@/components/client-dictionary';
+import { Button } from '../../../components/ui/Button';
 // 移除 Image 导入
 // 导入lucide-react图标
 import {
@@ -744,15 +745,13 @@ export default function ConfigClient() {
           
           {/* 操作按钮 */}
           <div className="config-actions">
-            <button
+            <Button
+              variant="success"
               onClick={testConnection}
-              className="test-button"
               disabled={isSaving}
             >
-              {isSaving && saveMessage.includes(dict.buttons.testing) 
-                ? dict.buttons.testing 
-                : dict.buttons.testConnection}
-            </button>
+              {dict.buttons.testConnection}
+            </Button>
           </div>
         </div>
       </div>

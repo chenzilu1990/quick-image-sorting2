@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useDictionary } from './client-dictionary';
+import { Button } from '../../components/ui/Button';
 
 interface RenamedImageActionsProps {
   isDownloading: boolean;
@@ -23,20 +24,20 @@ const RenamedImageActions: React.FC<RenamedImageActionsProps> = ({
   
   return (
     <div className="renamed-actions">
-      <button 
+      <Button 
+        variant="primary"
         onClick={onDownloadRenamedImages}
         disabled={isDownloading}
-        className="action-btn download-btn"
       >
         {isDownloading ? dict.status.downloading : dict.buttons.downloadAll}
-      </button>
+      </Button>
       
-      <button 
+      <Button 
+        variant="danger"
         onClick={onClearRenamedImages}
-        className="action-btn clear-btn"
       >
         {dict.buttons.clearCache}
-      </button>
+      </Button>
     </div>
   );
 };

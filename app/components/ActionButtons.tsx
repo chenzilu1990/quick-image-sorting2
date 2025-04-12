@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useDictionary } from './client-dictionary';
+import { Button } from '../../components/ui/Button';
 
 interface ActionButtonsProps {
   selectedCount: number;
@@ -29,25 +30,25 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   
   return (
     <div className="actions">
-      <button onClick={onClearImages} className="action-btn clear-btn">
+      <Button variant="danger" onClick={onClearImages}>
         {dict.buttons.clearAll}
-      </button>
-      <button onClick={onDeleteSelected} className="action-btn delete-btn" disabled={selectedCount === 0}>
+      </Button>
+      <Button variant="danger" onClick={onDeleteSelected} disabled={selectedCount === 0}>
         {dict.buttons.delete}
-      </button>
-      <button onClick={onDownloadOrder} className="action-btn">
+      </Button>
+      <Button variant="primary" onClick={onDownloadOrder}>
         {dict.buttons.download}
-      </button>
+      </Button>
       {selectedCount > 0 && (
-        <button 
+        <Button 
+          variant="primary"
           onClick={onDownloadSelected}
           disabled={selectedCount === 0 || isDownloading}
-          className="action-btn download-btn"
         >
           {isDownloading 
             ? dict.status.downloading 
             : `${dict.buttons.downloadSelected} (${selectedCount})`}
-        </button>
+        </Button>
       )}
     </div>
   );

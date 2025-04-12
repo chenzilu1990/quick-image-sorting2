@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { RenameMode } from '@/types';
 import { useDictionary } from '@/components/client-dictionary';
+import { Button } from '../../components/ui/Button';
 
 interface PrefixInputFormProps {
   prefix: string;
@@ -150,13 +151,13 @@ const PrefixInputForm: React.FC<PrefixInputFormProps> = ({
           <span className="preview-filename">{previewFileName}</span>
         </div>
 
-        <button 
+        <Button
           onClick={onApplyPrefix}
           disabled={isApplyButtonDisabled()}
-          className="apply-button"
+          variant="warning"
         >
           {dict.buttons.rename}
-        </button>
+        </Button>
       </div>
     // </div>
   );

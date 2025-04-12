@@ -4,6 +4,7 @@ import React, { useRef, useEffect } from 'react';
 import type { ImageFile } from '@/types';
 import PrefixInputForm from '@/components/PrefixInputForm';
 import { RenameMode } from '@/types';
+import { Button } from '../../components/ui/Button';
 
 interface SelectedImagesScrollerProps {
   selectedCount: number;
@@ -218,12 +219,13 @@ const SelectedImagesScroller: React.FC<SelectedImagesScrollerProps> = ({
       <div className="scroller-header">
         <h3 className="scroller-title">已选择 {selectedCount} 张图片</h3>
         {onClearSelection && (
-          <button 
+          <Button 
+            variant="secondary"
+            size="sm"
             onClick={onClearSelection}
-            className="clear-button"
           >
             清除选择
-          </button>
+          </Button>
         )}
       </div>
       

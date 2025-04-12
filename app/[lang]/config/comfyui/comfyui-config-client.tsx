@@ -5,6 +5,7 @@ import '@/globals.css';
 import comfyUIService from '@/services/comfyuiService';
 import type { ComfyUIConfig } from '@/types';
 import { useDictionary } from '@/components/client-dictionary';
+import { Button } from '../../../../components/ui/Button';
 
 interface ConnectionStatus {
   status: boolean;
@@ -235,20 +236,20 @@ export default function ComfyUIConfigClient() {
         )}
         
         <div className="comfyui-actions">
-          <button
+          <Button
+            variant="success"
             onClick={testConnection}
-            className="test-button"
             disabled={isTesting || isSaving}
           >
             {isTesting ? dict.buttons.testing : dict.buttons.testConnection}
-          </button>
+          </Button>
           
-          <button
+          <Button
+            variant="secondary"
             onClick={openComfyUI}
-            className="open-comfyui-btn"
           >
             {dict.buttons.openComfyUI}
-          </button>
+          </Button>
         </div>
         
         {saveMessage && (

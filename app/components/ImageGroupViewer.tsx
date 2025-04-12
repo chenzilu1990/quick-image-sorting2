@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import type { ImageFile } from '@/types';
 import { useDictionary } from '@/components/client-dictionary';
 import { Locale } from '@/i18n/settings';
+import { Button } from '../../components/ui/Button';
 
 interface UploadResult {
   status: 'uploading' | 'success' | 'error' | 'partial';
@@ -69,26 +70,26 @@ const ImageGroupViewer: React.FC<ImageGroupViewerProps> = ({
               <span className="renamed-group-time">({group.time})</span>
             </div>
             
-            <div className="group-actions">
-              <button 
-                className="group-download-btn"
+            <div className="group-actions flex gap-2">
+              <Button 
+                variant="warning" 
+                size="sm"
                 onClick={() => onDownloadGroup(group.images)}
                 disabled={isDownloading}
               >
                 {isDownloading ? dict.status.downloading : dict.buttons.downloadGroup}
-              </button>
+              </Button>
               
-              <button 
-                className="upload-group-btn"
+              <Button 
+                variant="secondary"
                 onClick={() => onUploadGroup(groupKey, group.images)}
                 disabled={isUploading || !hasConfig}
                 title={!hasConfig ? dict.alerts.uploadConfig : ''}
               >
-                <span className="icon">☁️</span>
                 {uploadResults[groupKey]?.status === 'uploading'
                   ? dict.status.uploading
                   : dict.buttons.uploadToCloud}
-              </button>
+              </Button>
             </div>
           </div>
           
@@ -120,15 +121,16 @@ const ImageGroupViewer: React.FC<ImageGroupViewerProps> = ({
                 />
                 <div className="renamed-filename">{image.file.displayName || image.file.name}</div>
                 
-                {/* 添加ComfyUI编辑按钮 */}
-                <button 
-                  className="edit-comfyui-btn"
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  className="w-full !rounded-t-none"
                   onClick={() => onOpenWorkflowModal(image)}
-                  disabled={!hasComfyUIConfig || isProcessingComfyUI}
-                  title={!hasComfyUIConfig ? dict.alerts.comfyUIConfig : ''}
+                  disabled={!hasConfig || isProcessingComfyUI}
+                  title={!hasConfig ? dict.alerts.comfyUIConfig : ''}
                 >
-                  <span className="icon">🎨</span> {dict.buttons.editWithComfyUI}
-                </button>
+                  {dict.buttons.editWithComfyUI}
+                </Button>
               </div>
             ))}
           </div>
