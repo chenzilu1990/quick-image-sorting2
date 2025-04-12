@@ -1,11 +1,11 @@
 import { ReactNode } from 'react';
 import { Metadata, Viewport } from 'next';
-import Sidebar from '@/components/Sidebar';
+import Sidebar from '@/components/layout/Sidebar';
 import '@/globals.css';
 import { i18n } from '@/i18n/settings';
 import type { Locale } from '@/i18n/settings';
 import { getDictionary } from '@/i18n/dictionaries';
-import { DictionaryProvider } from '@/components/client-dictionary';
+import { DictionaryProvider } from '@/components/hooks/client-dictionary';
 
 // 从环境变量获取网站信息
 const siteName = process.env.NEXT_PUBLIC_SITE_NAME || '图片快速排序与重命名工具';
@@ -56,11 +56,16 @@ interface RootLayoutProps {
 }
 
 export default async function RootLayout({ children, params }: RootLayoutProps) {
-  // 服务器端获取字典
   const dictionary = await getDictionary(params.lang);
   
+  // Define responsive margin classes based on sidebar widths
+  // Default margin for collapsed mobile sidebar (w-16)
+  // Larger margin for potentially expanded desktop sidebar (md:w-60)
+  // Note: If toggle state is managed globally, this class would need to adapt.
+  const contentMarginClasses = 'ml-16 md:ml-60'; 
+
   return (
-    <html lang={params.lang}>
+    <html lang={params.lang} className="h-full bg-gray-100">
       <head>
         <link rel="canonical" href={siteUrl} />
         {/* 如果配置了Google Analytics */}
@@ -80,13 +85,19 @@ export default async function RootLayout({ children, params }: RootLayoutProps) 
           </>
         )}
       </head>
-      <body>
-        {/* 全应用范围的字典提供者 */}
+      {/* Apply flex layout to body to ensure footer sticks to bottom if content is short */}
+      <body className="h-full flex flex-col">
         <DictionaryProvider dictionary={dictionary}>
-          <div className="main-layout">
+          {/* Main layout container - uses flex */}
+          <div className="flex min-h-screen">
             <Sidebar lang={params.lang} />
-            <div className="content-container">
-              {children}
+            {/* Apply responsive margin */}
+            <div className={`flex-grow overflow-y-auto ${contentMarginClasses} transition-all duration-300 ease-in-out`}>
+              {/* Wrap children in a main tag for semantics and padding */} 
+              <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+                 {children}
+              </main>
+              {/* Optional Footer could go here inside flex-grow if needed */}
             </div>
           </div>
         </DictionaryProvider>

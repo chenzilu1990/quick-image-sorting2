@@ -1,16 +1,16 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect, MouseEvent } from 'react';
-import { useDictionary } from '@/components/client-dictionary';
-import ImageDropzone, { ImageDropzoneRef } from '@/components/ImageDropzone';
-import SortableImageGrid, { SortableImageGridRef } from '@/components/SortableImageGrid';
-import WorkflowModal from '@/components/WorkflowModal';
-import ImageGroupViewer from '@/components/ImageGroupViewer';
-import SelectedImagesScroller from '@/components/SelectedImagesScroller';
-import ActionButtons from '@/components/ActionButtons';
-import RenamedImageActions from '@/components/RenamedImageActions';
-import HeaderActions from '@/components/HeaderActions';
-import EmptyStateMessage from '@/components/EmptyStateMessage';
+import { useDictionary } from '@/components/hooks/client-dictionary';
+import ImageDropzone, { ImageDropzoneRef } from '@/components/images/ImageDropzone';
+import SortableImageGrid, { SortableImageGridRef } from '@/components/images/SortableImageGrid';
+import WorkflowModal from '@/components/common/WorkflowModal';
+import ImageGroupViewer from '@/components/images/ImageGroupViewer';
+import SelectedImagesScroller from '@/components/common/SelectedImagesScroller';
+import ActionButtons from '@/components/common/ActionButtons';
+import RenamedImageActions from '@/components/renaming/RenamedImageActions';
+import HeaderActions from '@/components/common/HeaderActions';
+import EmptyStateMessage from '@/components/common/EmptyStateMessage';
 
 import JSZip from 'jszip';
 import '@/globals.css';

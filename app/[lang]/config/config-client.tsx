@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useDictionary } from '@/components/client-dictionary';
-import { Button } from '../../../components/ui/Button';
+import { useDictionary } from '@/components/hooks/client-dictionary';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Label } from '@/components/ui/Label';
 // 移除 Image 导入
 // 导入lucide-react图标
 import {
@@ -393,52 +395,66 @@ export default function ConfigClient() {
   
   // 渲染配置表单
   const renderConfigForm = () => {
+    // Helper function to create a form group
+    const FormGroup: React.FC<{
+      label: string;
+      htmlFor?: string;
+      children: React.ReactNode;
+      helpText?: React.ReactNode;
+    }> = ({ label, htmlFor, children, helpText }) => (
+      <div className="mb-4">
+        <Label htmlFor={htmlFor}>{label}</Label>
+        {children}
+        {helpText && <p className="mt-1 text-xs text-gray-500">{helpText}</p>}
+      </div>
+    );
+
     switch (selectedService) {
       case 'github':
         return (
           <div className="github-config">
-            <h2>{dict.config.githubConfig}</h2>
+            <h2 className="text-xl font-semibold mb-4">{dict.config.githubConfig}</h2>
             
-            <div className="form-group">
-              <label>{dict.config.githubToken}</label>
-              <input
+            <FormGroup label={dict.config.githubToken} htmlFor="githubToken">
+              <Input
+                id="githubToken"
                 type="password"
                 value={githubToken}
                 onChange={(e) => handleInputChange('githubToken', e.target.value)}
                 placeholder={dict.placeholders.githubToken}
                 onBlur={handleInputBlur}
               />
-              <p className="input-help">
+              <p className="mt-1 text-xs text-gray-500">
                 {dict.config.githubTokenHelp}
-                <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer">
+                <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline ml-1">
                   {dict.config.howToGetToken}
                 </a>
               </p>
-            </div>
+            </FormGroup>
             
-            <div className="form-group">
-              <label>{dict.config.githubOwner}</label>
-              <input
+            <FormGroup label={dict.config.githubOwner} htmlFor="githubOwner">
+              <Input
+                id="githubOwner"
                 type="text"
                 value={githubOwner}
                 onChange={(e) => handleInputChange('githubOwner', e.target.value)}
                 placeholder={dict.placeholders.githubOwner}
                 onBlur={handleInputBlur}
               />
-            </div>
+            </FormGroup>
             
-            <div className="form-group">
-              <label>{dict.config.githubRepo}</label>
-              <input
+            <FormGroup label={dict.config.githubRepo} htmlFor="githubRepo">
+              <Input
+                id="githubRepo"
                 type="text"
                 value={githubRepo}
                 onChange={(e) => handleInputChange('githubRepo', e.target.value)}
                 placeholder={dict.placeholders.githubRepo}
                 onBlur={handleInputBlur}
               />
-            </div>
+            </FormGroup>
             
-            <div className="path-info">
+            <div className="path-info p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
               <p className="info-text">
                 <span className="info-icon">ℹ️</span> 
                 {dict.config.githubPathInfo}
@@ -450,241 +466,227 @@ export default function ConfigClient() {
       case 'aws':
         return (
           <div className="aws-config">
-            <h2>{dict.config.awsConfig || 'AWS S3配置'}</h2>
+            <h2 className="text-xl font-semibold mb-4">{dict.config.awsConfig || 'AWS S3配置'}</h2>
             
-            <div className="form-group">
-              <label>{dict.config.awsAccessKey || 'Access Key'}</label>
-              <input
+            <FormGroup label={dict.config.awsAccessKey || 'Access Key'} htmlFor="s3AccessKey">
+              <Input
+                id="s3AccessKey"
                 type="password"
                 value={s3AccessKey}
                 onChange={(e) => handleInputChange('s3AccessKey', e.target.value)}
                 placeholder={dict.placeholders.awsAccessKey || 'AWS Access Key'}
                 onBlur={handleInputBlur}
               />
-            </div>
+            </FormGroup>
             
-            <div className="form-group">
-              <label>{dict.config.awsSecretKey || 'Secret Key'}</label>
-              <input
+            <FormGroup label={dict.config.awsSecretKey || 'Secret Key'} htmlFor="s3SecretKey">
+              <Input
+                id="s3SecretKey"
                 type="password"
                 value={s3SecretKey}
                 onChange={(e) => handleInputChange('s3SecretKey', e.target.value)}
                 placeholder={dict.placeholders.awsSecretKey || 'AWS Secret Key'}
                 onBlur={handleInputBlur}
               />
-            </div>
+            </FormGroup>
             
-            <div className="form-group">
-              <label>{dict.config.awsBucket || 'Bucket'}</label>
-              <input
+            <FormGroup label={dict.config.awsBucket || 'Bucket'} htmlFor="s3Bucket">
+              <Input
+                id="s3Bucket"
                 type="text"
                 value={s3Bucket}
                 onChange={(e) => handleInputChange('s3Bucket', e.target.value)}
                 placeholder={dict.placeholders.awsBucket || 'S3 Bucket名称'}
                 onBlur={handleInputBlur}
               />
-            </div>
+            </FormGroup>
             
-            <div className="form-group">
-              <label>{dict.config.awsRegion || 'Region'}</label>
-              <input
+            <FormGroup label={dict.config.awsRegion || 'Region'} htmlFor="s3Region">
+              <Input
+                id="s3Region"
                 type="text"
                 value={s3Region}
                 onChange={(e) => handleInputChange('s3Region', e.target.value)}
                 placeholder={dict.placeholders.awsRegion || 'us-east-1'}
                 onBlur={handleInputBlur}
               />
-            </div>
+            </FormGroup>
           </div>
         );
         
       case 'tencent':
         return (
           <div className="tencent-config">
-            <h2>{dict.config.tencentConfig || '腾讯云COS配置'}</h2>
-            
-            <div className="form-group">
-              <label>{dict.config.tencentSecretId || 'SecretId'}</label>
-              <input
+            <h2 className="text-xl font-semibold mb-4">{dict.config.tencentConfig || '腾讯云COS配置'}</h2>
+            <FormGroup label={dict.config.tencentSecretId || 'SecretId'} htmlFor="cosSecretId">
+              <Input
+                id="cosSecretId"
                 type="password"
                 value={cosSecretId}
                 onChange={(e) => handleInputChange('cosSecretId', e.target.value)}
                 placeholder={dict.placeholders.tencentSecretId || '腾讯云SecretId'}
                 onBlur={handleInputBlur}
               />
-            </div>
-            
-            <div className="form-group">
-              <label>{dict.config.tencentSecretKey || 'SecretKey'}</label>
-              <input
+            </FormGroup>
+            <FormGroup label={dict.config.tencentSecretKey || 'SecretKey'} htmlFor="cosSecretKey">
+              <Input
+                id="cosSecretKey"
                 type="password"
                 value={cosSecretKey}
                 onChange={(e) => handleInputChange('cosSecretKey', e.target.value)}
                 placeholder={dict.placeholders.tencentSecretKey || '腾讯云SecretKey'}
                 onBlur={handleInputBlur}
               />
-            </div>
-            
-            <div className="form-group">
-              <label>{dict.config.tencentBucket || 'Bucket'}</label>
-              <input
+            </FormGroup>
+            <FormGroup label={dict.config.tencentBucket || 'Bucket'} htmlFor="cosBucket">
+              <Input
+                id="cosBucket"
                 type="text"
                 value={cosBucket}
                 onChange={(e) => handleInputChange('cosBucket', e.target.value)}
                 placeholder={dict.placeholders.tencentBucket || 'cos-bucket-123456'}
                 onBlur={handleInputBlur}
               />
-            </div>
-            
-            <div className="form-group">
-              <label>{dict.config.tencentRegion || 'Region'}</label>
-              <input
+            </FormGroup>
+            <FormGroup label={dict.config.tencentRegion || 'Region'} htmlFor="cosRegion">
+              <Input
+                id="cosRegion"
                 type="text"
                 value={cosRegion}
                 onChange={(e) => handleInputChange('cosRegion', e.target.value)}
                 placeholder={dict.placeholders.tencentRegion || 'ap-guangzhou'}
                 onBlur={handleInputBlur}
               />
-            </div>
+            </FormGroup>
           </div>
         );
         
       case 'aliyun':
         return (
           <div className="aliyun-config">
-            <h2>{dict.config.aliyunConfig || '阿里云OSS配置'}</h2>
-            
-            <div className="form-group">
-              <label>{dict.config.aliyunAccessKey || 'AccessKey'}</label>
-              <input
+            <h2 className="text-xl font-semibold mb-4">{dict.config.aliyunConfig || '阿里云OSS配置'}</h2>
+            <FormGroup label={dict.config.aliyunAccessKey || 'AccessKey'} htmlFor="ossAccessKey">
+              <Input
+                id="ossAccessKey"
                 type="password"
                 value={ossAccessKey}
                 onChange={(e) => handleInputChange('ossAccessKey', e.target.value)}
                 placeholder={dict.placeholders.aliyunAccessKey || '阿里云AccessKey'}
                 onBlur={handleInputBlur}
               />
-            </div>
-            
-            <div className="form-group">
-              <label>{dict.config.aliyunSecretKey || 'SecretKey'}</label>
-              <input
+            </FormGroup>
+             <FormGroup label={dict.config.aliyunSecretKey || 'SecretKey'} htmlFor="ossSecretKey">
+              <Input
+                id="ossSecretKey"
                 type="password"
                 value={ossSecretKey}
                 onChange={(e) => handleInputChange('ossSecretKey', e.target.value)}
                 placeholder={dict.placeholders.aliyunSecretKey || '阿里云SecretKey'}
                 onBlur={handleInputBlur}
               />
-            </div>
-            
-            <div className="form-group">
-              <label>{dict.config.aliyunBucket || 'Bucket'}</label>
-              <input
+            </FormGroup>
+             <FormGroup label={dict.config.aliyunBucket || 'Bucket'} htmlFor="ossBucket">
+              <Input
+                id="ossBucket"
                 type="text"
                 value={ossBucket}
                 onChange={(e) => handleInputChange('ossBucket', e.target.value)}
                 placeholder={dict.placeholders.aliyunBucket || 'oss-bucket'}
                 onBlur={handleInputBlur}
               />
-            </div>
-            
-            <div className="form-group">
-              <label>{dict.config.aliyunRegion || 'Region'}</label>
-              <input
+            </FormGroup>
+            <FormGroup label={dict.config.aliyunRegion || 'Region'} htmlFor="ossRegion">
+              <Input
+                id="ossRegion"
                 type="text"
                 value={ossRegion}
                 onChange={(e) => handleInputChange('ossRegion', e.target.value)}
                 placeholder={dict.placeholders.aliyunRegion || 'oss-cn-hangzhou'}
                 onBlur={handleInputBlur}
               />
-            </div>
+            </FormGroup>
           </div>
         );
         
       case 'qiniu':
         return (
           <div className="qiniu-config">
-            <h2>{dict.config.qiniuConfig || '七牛云配置'}</h2>
-            
-            <div className="form-group">
-              <label>{dict.config.qiniuAccessKey || 'AccessKey'}</label>
-              <input
+            <h2 className="text-xl font-semibold mb-4">{dict.config.qiniuConfig || '七牛云配置'}</h2>
+            <FormGroup label={dict.config.qiniuAccessKey || 'AccessKey'} htmlFor="qiniuAccessKey">
+              <Input
+                id="qiniuAccessKey"
                 type="password"
                 value={qiniuAccessKey}
                 onChange={(e) => handleInputChange('qiniuAccessKey', e.target.value)}
                 placeholder={dict.placeholders.qiniuAccessKey || '七牛AccessKey'}
                 onBlur={handleInputBlur}
               />
-            </div>
-            
-            <div className="form-group">
-              <label>{dict.config.qiniuSecretKey || 'SecretKey'}</label>
-              <input
+            </FormGroup>
+             <FormGroup label={dict.config.qiniuSecretKey || 'SecretKey'} htmlFor="qiniuSecretKey">
+              <Input
+                id="qiniuSecretKey"
                 type="password"
                 value={qiniuSecretKey}
                 onChange={(e) => handleInputChange('qiniuSecretKey', e.target.value)}
                 placeholder={dict.placeholders.qiniuSecretKey || '七牛SecretKey'}
                 onBlur={handleInputBlur}
               />
-            </div>
-            
-            <div className="form-group">
-              <label>{dict.config.qiniuBucket || 'Bucket'}</label>
-              <input
+            </FormGroup>
+            <FormGroup label={dict.config.qiniuBucket || 'Bucket'} htmlFor="qiniuBucket">
+              <Input
+                id="qiniuBucket"
                 type="text"
                 value={qiniuBucket}
                 onChange={(e) => handleInputChange('qiniuBucket', e.target.value)}
                 placeholder={dict.placeholders.qiniuBucket || '七牛Bucket'}
                 onBlur={handleInputBlur}
               />
-            </div>
-            
-            <div className="form-group">
-              <label>{dict.config.qiniuDomain || '域名'}</label>
-              <input
+            </FormGroup>
+            <FormGroup label={dict.config.qiniuDomain || '域名'} htmlFor="qiniuDomain">
+              <Input
+                id="qiniuDomain"
                 type="text"
                 value={qiniuDomain}
                 onChange={(e) => handleInputChange('qiniuDomain', e.target.value)}
                 placeholder={dict.placeholders.qiniuDomain || 'https://example.qiniucdn.com'}
                 onBlur={handleInputBlur}
               />
-            </div>
+            </FormGroup>
           </div>
         );
         
       case 'custom':
         return (
           <div className="custom-server-config">
-            <h2>{dict.config.customConfig}</h2>
+            <h2 className="text-xl font-semibold mb-4">{dict.config.customConfig}</h2>
             
-            <div className="form-group">
-              <label>{dict.config.apiUrl}</label>
-              <input
+            <FormGroup label={dict.config.apiUrl} htmlFor="customApiUrl" helpText={dict.config.apiUrlHelp}>
+              <Input
+                id="customApiUrl"
                 type="text"
                 value={customApiUrl}
                 onChange={(e) => handleInputChange('customApiUrl', e.target.value)}
                 placeholder={dict.placeholders.customApiUrl}
                 onBlur={handleInputBlur}
               />
-              <p className="input-help">{dict.config.apiUrlHelp}</p>
-            </div>
+            </FormGroup>
             
-            <div className="form-group">
-              <label>{dict.config.apiKey}</label>
-              <input
+            <FormGroup label={dict.config.apiKey} htmlFor="customApiKey" helpText={dict.config.apiKeyHelp}>
+              <Input
+                id="customApiKey"
                 type="password"
                 value={customApiKey}
                 onChange={(e) => handleInputChange('customApiKey', e.target.value)}
                 placeholder={dict.placeholders.customApiKey}
                 onBlur={handleInputBlur}
               />
-              <p className="input-help">{dict.config.apiKeyHelp}</p>
-            </div>
+            </FormGroup>
           </div>
         );
         
       default:
         return (
-          <div className="empty-config">
+          <div className="empty-config p-4 text-gray-500">
             <p>{dict.config.selectService || '请选择图床服务'}</p>
           </div>
         );
@@ -692,59 +694,60 @@ export default function ConfigClient() {
   };
   
   return (
-    <main className="config-page">
-      <h1>{dict.config.title}</h1>
+    <main className="config-page p-4 md:p-6">
+      <h1 className="text-2xl font-bold mb-6 text-center md:text-left">{dict.config.title}</h1>
       
-      <div className="config-container">
-        {/* 侧边栏 - 图床服务列表 */}
-        <div className="config-sidebar">
-          <h2>{dict.config.serviceSelector || '选择图床服务'}</h2>
-          <ul className="service-list">
+      {/* Use Flexbox/Grid for layout */}
+      <div className="flex flex-col md:flex-row gap-6 bg-white shadow rounded-lg overflow-hidden">
+        {/* Sidebar */}
+        <div className="config-sidebar p-4 md:w-1/3 lg:w-1/4 border-b md:border-b-0 md:border-r border-gray-200">
+          <h2 className="text-lg font-semibold mb-4">{dict.config.serviceSelector || '选择图床服务'}</h2>
+          {/* Service list - needs Tailwind styling */}
+          <ul className="service-list space-y-1">
             {imageBedServices.map(service => (
               <li 
                 key={service.id}
-                className={`service-item ${selectedService === service.id ? 'active' : ''}`}
+                className={`service-item p-2 rounded-md flex items-center gap-3 cursor-pointer transition-colors ${selectedService === service.id ? 'bg-blue-100 text-blue-800 font-semibold' : 'hover:bg-gray-100'}`}
                 onClick={() => handleServiceChange(service.id)}
               >
-                <div className="service-icon">
-                  {/* 直接使用Lucide图标组件 */}
+                <div className="service-icon flex-shrink-0 w-6 h-6 flex items-center justify-center">
                   {service.icon}
                 </div>
-                <div className="service-info">
-                  <div className="service-name">{service.name}</div>
-                  <div className="service-description">{service.description}</div>
+                <div className="service-info overflow-hidden">
+                  <div className="service-name truncate">{service.name}</div>
+                  <div className="service-description text-xs text-gray-500 truncate">{service.description}</div>
                 </div>
               </li>
             ))}
           </ul>
         </div>
         
-        {/* 主内容区 - 所选服务的配置表单 */}
-        <div className="config-content">
-          {/* 服务配置表单 */}
+        {/* Main content area */}
+        <div className="config-content p-4 md:p-6 flex-1">
+          {/* Render the form for the selected service */}
           {renderConfigForm()}
           
-          {/* 状态消息 */}
+          {/* Status messages - needs Tailwind styling */}
           {saveMessage && (
-            <div className={`save-message ${saveMessage.includes('✓') ? 'success' : 'error'}`}>
+            <div className={`save-message mt-4 p-2 rounded text-sm ${saveMessage.includes('✓') || saveMessage.includes(dict.status.configSaved) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
               {saveMessage}
             </div>
           )}
           
           {configChanged && !isSaving && (
-            <div className="config-changed-indicator">
+            <div className="config-changed-indicator mt-2 text-sm text-yellow-600">
               {dict.status.configChanged}
             </div>
           )}
           
-          {isSaving && (
-            <div className="config-changed-indicator saving-indicator">
+          {isSaving && saveMessage !== dict.buttons.saving && (
+            <div className="config-changed-indicator saving-indicator mt-2 text-sm text-gray-500 animate-pulse">
               {dict.status.autoSaving}
             </div>
           )}
           
-          {/* 操作按钮 */}
-          <div className="config-actions">
+          {/* Action Button */}
+          <div className="config-actions mt-6 border-t pt-4">
             <Button
               variant="success"
               onClick={testConnection}

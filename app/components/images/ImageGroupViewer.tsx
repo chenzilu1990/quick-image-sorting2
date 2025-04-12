@@ -4,9 +4,9 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ImageFile } from '@/types';
-import { useDictionary } from '@/components/client-dictionary';
+import { useDictionary } from '@/components/hooks/client-dictionary';
 import { Locale } from '@/i18n/settings';
-import { Button } from '../../components/ui/Button';
+import { Button } from '@/components/ui/Button';
 
 interface UploadResult {
   status: 'uploading' | 'success' | 'error' | 'partial';
@@ -59,18 +59,18 @@ const ImageGroupViewer: React.FC<ImageGroupViewerProps> = ({
   const pathname = usePathname();
   
   return (
-    <div className="renamed-images-section">
-      <h3>{dict.home.renamedImagesTitle}</h3>
+    <div className="renamed-images-section my-8 p-6 bg-orange-50 rounded-lg border-2 border-orange-300 shadow-md space-y-6">
+      <h3 className="text-xl font-semibold text-center text-orange-600">{dict.home.renamedImagesTitle}</h3>
       
       {groups.map(([groupKey, group]) => (
-        <div key={groupKey} className="renamed-group">
-          <div className="renamed-group-header">
-            <div>
-              <span className="renamed-group-prefix">{group.prefix}</span>
-              <span className="renamed-group-time">({group.time})</span>
+        <div key={groupKey} className="renamed-group border-b border-dashed border-orange-300 pb-6 last:border-b-0 last:pb-0">
+          <div className="renamed-group-header flex justify-between items-center mb-3 p-2 bg-orange-50 rounded border-l-4 border-orange-500">
+            <div className="flex-1 overflow-hidden mr-2">
+              <span className="renamed-group-prefix font-bold text-orange-800 mr-2 truncate">{group.prefix}</span>
+              <span className="renamed-group-time text-sm text-gray-600 mr-4">({group.time})</span>
             </div>
             
-            <div className="group-actions flex gap-2">
+            <div className="group-actions flex gap-2 flex-shrink-0">
               <Button 
                 variant="warning" 
                 size="sm"
@@ -82,6 +82,7 @@ const ImageGroupViewer: React.FC<ImageGroupViewerProps> = ({
               
               <Button 
                 variant="secondary"
+                size="sm"
                 onClick={() => onUploadGroup(groupKey, group.images)}
                 disabled={isUploading || !hasConfig}
                 title={!hasConfig ? dict.alerts.uploadConfig : ''}
@@ -93,9 +94,9 @@ const ImageGroupViewer: React.FC<ImageGroupViewerProps> = ({
             </div>
           </div>
           
-          <div className="renamed-images-grid">
+          <div className="renamed-images-grid flex overflow-x-auto gap-4 pb-2 scrollbar-thin scrollbar-thumb-orange-400 scrollbar-track-orange-100">
             {group.images.map((image: ImageFile) => (
-              <div key={image.id} className="renamed-image-item">
+              <div key={image.id} className="relative flex-shrink-0 w-44 rounded-lg border border-gray-200 overflow-hidden shadow transition-all duration-200 ease-in-out hover:-translate-y-1 hover:shadow-lg pb-10">
                 {uploadResults[groupKey] && (
                   <div className={`upload-status ${uploadResults[groupKey].status}`}>
                     <div className="upload-status-content">
@@ -118,16 +119,17 @@ const ImageGroupViewer: React.FC<ImageGroupViewerProps> = ({
                   src={image.preview} 
                   alt={image.file.displayName || image.file.name} 
                   onError={onImageError}
+                  className="block w-full h-40 object-cover"
                 />
-                <div className="renamed-filename">{image.file.displayName || image.file.name}</div>
+                <div className="absolute bottom-10 left-0 right-0 bg-black bg-opacity-70 text-white px-2 py-1 text-xs truncate z-10">{image.file.displayName || image.file.name}</div>
                 
                 <Button 
-                  variant="secondary" 
+                  variant="secondary"
                   size="sm" 
-                  className="w-full !rounded-t-none"
+                  className="absolute bottom-0 left-0 right-0 w-full rounded-t-none"
                   onClick={() => onOpenWorkflowModal(image)}
-                  disabled={!hasConfig || isProcessingComfyUI}
-                  title={!hasConfig ? dict.alerts.comfyUIConfig : ''}
+                  disabled={!hasComfyUIConfig || isProcessingComfyUI}
+                  title={!hasComfyUIConfig ? dict.alerts.comfyUIConfig : ''}
                 >
                   {dict.buttons.editWithComfyUI}
                 </Button>
@@ -136,18 +138,18 @@ const ImageGroupViewer: React.FC<ImageGroupViewerProps> = ({
           </div>
           
           {!hasConfig && (
-            <div className="config-missing">
+            <div className="config-missing mt-2 p-2 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded text-sm">
               {dict.alerts.configUpload} 
-              <Link href={`/${lang}/config`} className="config-link">
+              <Link href={`/${lang}/config`} className="config-link ml-1 font-medium text-blue-600 hover:underline">
                 <span>{dict.buttons.proceed}</span>
               </Link>
             </div>
           )}
           
           {!hasComfyUIConfig && (
-            <div className="config-missing">
+            <div className="config-missing mt-2 p-2 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded text-sm">
               {dict.alerts.configComfyUI} 
-              <Link href={`/${lang}/config/comfyui`} className="config-link">
+              <Link href={`/${lang}/config/comfyui`} className="config-link ml-1 font-medium text-blue-600 hover:underline">
                 <span>{dict.buttons.proceed}</span>
               </Link>
             </div>

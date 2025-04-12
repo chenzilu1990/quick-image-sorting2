@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { useDictionary } from './client-dictionary';
-import { Button } from '../../components/ui/Button';
+import { useDictionary } from '@/components/hooks/client-dictionary';
+import { Button } from '@/components/ui/Button';
 
 interface ActionButtonsProps {
   selectedCount: number;
@@ -29,7 +29,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   const dict = useDictionary();
   
   return (
-    <div className="actions">
+    <div className="flex justify-center mt-8 gap-4">
       <Button variant="danger" onClick={onClearImages}>
         {dict.buttons.clearAll}
       </Button>

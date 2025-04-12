@@ -3,6 +3,7 @@
 import React, { useRef, useState, useCallback, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import type { ImageFile } from '@/types';
+import clsx from 'clsx';
 
 // 可排序网格引用类型
 export interface SortableImageGridRef {
@@ -106,23 +107,34 @@ const DraggableImage: React.FC<DraggableImageProps> = ({
   // Get display name (use displayName if prefix has been applied)
   const displayName = image.file.displayName || image.file.name;
 
+  // Combine classes using clsx for better readability
+  const itemClasses = clsx(
+    'relative overflow-hidden rounded border border-gray-200 cursor-grab transition-all duration-200 ease-in-out group',
+    {
+      'opacity-50': isDragging, // dragging state
+      'ring-2 ring-offset-1 ring-blue-500 border-blue-400': isSelected, // selected state
+      'hover:transform hover:-translate-y-1 hover:shadow-md': !isDragging, // hover state only when not dragging
+    }
+  );
+
   return (
     <div 
       ref={ref} 
-      className={`image-item ${isDragging ? 'dragging' : ''} ${isSelected ? 'selected' : ''}`}
+      className={itemClasses}
       onClick={handleClick}
     >
       <img 
         src={image.preview} 
         alt={`Preview ${index}`} 
         onError={onImageError}
+        className="block w-full h-48 object-cover" // Tailwind classes for img
       />
       {isSelected && (
-        <div className="selected-indicator">
+        <div className="absolute top-2 right-2 z-20 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold shadow transition-transform duration-200 ease-in-out hover:scale-110">
           <span>{selectionIndex}</span>
         </div>
       )}
-      <div className="image-filename">
+      <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white px-2 py-1 text-xs truncate transition-all duration-300 ease-in-out group-hover:bg-blue-500 group-hover:bg-opacity-80 group-hover:pb-2 z-10">
         {displayName}
       </div>
     </div>
@@ -202,7 +214,8 @@ const SortableImageGrid = forwardRef<SortableImageGridRef, SortableImageGridProp
     }, []);
 
     return (
-      <div className="image-grid">
+      // Use Tailwind grid layout
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
         {images.map((image, index) => (
           <DraggableImage
             key={image.id}

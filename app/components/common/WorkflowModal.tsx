@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { Workflow, ImageFile } from '../types';
-import { useDictionary } from './client-dictionary';
-import { Button } from '../../components/ui/Button';
+import type { Workflow, ImageFile } from '@/types';
+import { useDictionary } from '@/components/hooks/client-dictionary';
+import { Button } from '@/components/ui/Button';
 import { X } from 'lucide-react';
 
 interface WorkflowModalProps {

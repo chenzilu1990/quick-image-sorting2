@@ -1,10 +1,12 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { i18n } from '@/i18n/settings';
 import type { Locale } from '@/i18n/settings';
-import { useDictionary } from '@/components/client-dictionary';
+import { useDictionary } from '@/components/hooks/client-dictionary';
+import { Label } from '@/components/ui/Label';
+import { Select } from '@/components/ui/Select';
 
 export default function LanguageSwitcher({ locale }: { locale: Locale }) {
   const pathName = usePathname();
@@ -22,21 +24,22 @@ export default function LanguageSwitcher({ locale }: { locale: Locale }) {
   };
 
   return (
-    <div className="language-select">
-      <label htmlFor="language-select">{dict.navigation.language}:</label>
-      <select 
+    <div className="flex items-center gap-2">
+      <Label htmlFor="language-select" className="mb-0">{dict.navigation.language}:</Label>
+      <Select 
         id="language-select" 
         value={locale}
         onChange={(e) => {
           window.location.href = redirectedPathName(e.target.value as Locale);
         }}
+        className="text-sm"
       >
         {i18n.locales.map((loc) => (
           <option key={loc} value={loc}>
             {loc === 'zh' ? '中文' : 'English'}
           </option>
         ))}
-      </select>
+      </Select>
     </div>
   );
 } 

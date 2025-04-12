@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { useDictionary } from './client-dictionary';
-import { Button } from '../../components/ui/Button';
+import { useDictionary } from '@/components/hooks/client-dictionary';
+import { Button } from '@/components/ui/Button';
 
 interface RenamedImageActionsProps {
   isDownloading: boolean;
@@ -23,7 +23,7 @@ const RenamedImageActions: React.FC<RenamedImageActionsProps> = ({
   const dict = useDictionary();
   
   return (
-    <div className="renamed-actions">
+    <div className="flex justify-center mt-4 gap-4">
       <Button 
         variant="primary"
         onClick={onDownloadRenamedImages}
