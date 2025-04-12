@@ -1,7 +1,7 @@
 ---
-description: 
+description: 项目架构
 globs: 
-alwaysApply: true
+alwaysApply: false
 ---
  # 图片排序应用架构
 
