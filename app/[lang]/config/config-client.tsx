@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useDictionary } from '@/components/hooks/client-dictionary';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -53,6 +53,20 @@ interface ImageBedService {
   description: string;
   icon: React.ReactNode; // 修改为ReactNode类型
 }
+
+// 将 FormGroup 组件移到 ConfigClient 外部（或模块作用域内）
+const FormGroup: React.FC<{
+  label: string;
+  htmlFor?: string;
+  children: React.ReactNode;
+  helpText?: React.ReactNode;
+}> = ({ label, htmlFor, children, helpText }) => (
+  <div className="mb-4">
+    <Label htmlFor={htmlFor}>{label}</Label>
+    {children}
+    {helpText && <p className="mt-1 text-xs text-gray-500">{helpText}</p>}
+  </div>
+);
 
 export default function ConfigClient() {
   const dict = useDictionary();
@@ -138,6 +152,9 @@ export default function ConfigClient() {
   const [saveMessage, setSaveMessage] = useState('');
   const [configChanged, setConfigChanged] = useState(false);
   
+  // 用于 debounce 的 Ref
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
   // 从localStorage加载配置
   useEffect(() => {
     try {
@@ -200,11 +217,21 @@ export default function ConfigClient() {
     }
   }, []);
   
-  // 保存配置到localStorage
-  const saveConfig = (updatedValues: ConfigUpdateValues = {}) => {
-    setIsSaving(true);
+  // 保存配置到localStorage - 改为 useCallback
+  const saveConfig = useCallback((updatedValues: ConfigUpdateValues = {}) => {
+    // 如果已经在保存中，则取消（或者可以排队，但现在先取消）
+    if (isSaving) return; 
     
+    setIsSaving(true);
+    setSaveMessage(dict.status.autoSaving || '自动保存中...'); // 提供即时反馈
+
     try {
+      // 清除任何待处理的超时
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+      
       // 合并当前状态和传入的更新值
       const updatedSelectedService = updatedValues.selectedService !== undefined ? updatedValues.selectedService : selectedService;
       
@@ -249,7 +276,7 @@ export default function ConfigClient() {
       localStorage.setItem('imageUploaderConfig', JSON.stringify(config));
       
       setSaveMessage(dict.status.configSaved);
-      setConfigChanged(false);
+      setConfigChanged(false); // 标记更改已保存
       setTimeout(() => setSaveMessage(''), 1500);
     } catch (error) {
       console.error('保存配置出错:', error);
@@ -257,19 +284,48 @@ export default function ConfigClient() {
     } finally {
       setIsSaving(false);
     }
-  };
-  
-  // 处理服务类型变更
+  // 依赖项应包含所有状态变量和 dict
+  }, [
+      selectedService, githubToken, githubRepo, githubOwner, 
+      s3AccessKey, s3SecretKey, s3Bucket, s3Region,
+      cosSecretId, cosSecretKey, cosBucket, cosRegion,
+      ossAccessKey, ossSecretKey, ossBucket, ossRegion,
+      qiniuAccessKey, qiniuSecretKey, qiniuBucket, qiniuDomain,
+      customApiUrl, customApiKey, dict, isSaving // 添加 isSaving
+  ]);
+
+  // Debounced 保存函数
+  const debouncedSave = useCallback(() => {
+    // 清除之前的计时器
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    // 设置新的计时器，延迟 1 秒后保存
+    saveTimeoutRef.current = setTimeout(() => {
+      if (configChanged) { // 仅在有未保存更改时执行保存
+          saveConfig();
+      }
+    }, 1000); // 1000ms 延迟
+  }, [saveConfig, configChanged]); // 依赖 saveConfig 和 configChanged
+
+  // 处理服务类型变更 - 立即保存服务类型变更
   const handleServiceChange = (service: string) => {
-    setSelectedService(service);
-    saveConfig({ selectedService: service });
+     // 如果有待处理的保存，先取消
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+    // 如果当前有未保存的更改，先保存它们
+    if (configChanged) {
+        saveConfig({ selectedService: service }); // 传递新的 service
+    } else {
+        saveConfig({ selectedService: service }); // 即使没有其他更改，也要保存服务选择
+    }
+    setSelectedService(service); // 更新本地状态
   };
   
   // 处理表单输入变化的通用函数
   const handleInputChange = (field: string, value: string) => {
-    const updateObj: { [key: string]: string } = {};
-    updateObj[field] = value;
-    
     // 根据字段名更新相应的状态
     switch (field) {
       // GitHub配置
@@ -306,16 +362,18 @@ export default function ConfigClient() {
       case 'customApiKey': setCustomApiKey(value); break;
     }
     
-    setConfigChanged(true);
+    setConfigChanged(true); // 标记有未保存的更改
+    debouncedSave(); // 触发 debounced 保存
   };
   
-  // 处理输入框失去焦点时保存
   const handleInputBlur = () => {
+    // 在这里处理失去焦点的逻辑
+    // 例如，可以在这里触发保存操作
     if (configChanged) {
       saveConfig();
     }
   };
-
+  
   // 测试连接
   const testConnection = async () => {
     setIsSaving(true);
@@ -395,20 +453,6 @@ export default function ConfigClient() {
   
   // 渲染配置表单
   const renderConfigForm = () => {
-    // Helper function to create a form group
-    const FormGroup: React.FC<{
-      label: string;
-      htmlFor?: string;
-      children: React.ReactNode;
-      helpText?: React.ReactNode;
-    }> = ({ label, htmlFor, children, helpText }) => (
-      <div className="mb-4">
-        <Label htmlFor={htmlFor}>{label}</Label>
-        {children}
-        {helpText && <p className="mt-1 text-xs text-gray-500">{helpText}</p>}
-      </div>
-    );
-
     switch (selectedService) {
       case 'github':
         return (
@@ -422,7 +466,6 @@ export default function ConfigClient() {
                 value={githubToken}
                 onChange={(e) => handleInputChange('githubToken', e.target.value)}
                 placeholder={dict.placeholders.githubToken}
-                onBlur={handleInputBlur}
               />
               <p className="mt-1 text-xs text-gray-500">
                 {dict.config.githubTokenHelp}
@@ -439,7 +482,6 @@ export default function ConfigClient() {
                 value={githubOwner}
                 onChange={(e) => handleInputChange('githubOwner', e.target.value)}
                 placeholder={dict.placeholders.githubOwner}
-                onBlur={handleInputBlur}
               />
             </FormGroup>
             
@@ -450,7 +492,6 @@ export default function ConfigClient() {
                 value={githubRepo}
                 onChange={(e) => handleInputChange('githubRepo', e.target.value)}
                 placeholder={dict.placeholders.githubRepo}
-                onBlur={handleInputBlur}
               />
             </FormGroup>
             
@@ -475,7 +516,6 @@ export default function ConfigClient() {
                 value={s3AccessKey}
                 onChange={(e) => handleInputChange('s3AccessKey', e.target.value)}
                 placeholder={dict.placeholders.awsAccessKey || 'AWS Access Key'}
-                onBlur={handleInputBlur}
               />
             </FormGroup>
             
@@ -486,7 +526,6 @@ export default function ConfigClient() {
                 value={s3SecretKey}
                 onChange={(e) => handleInputChange('s3SecretKey', e.target.value)}
                 placeholder={dict.placeholders.awsSecretKey || 'AWS Secret Key'}
-                onBlur={handleInputBlur}
               />
             </FormGroup>
             
@@ -497,7 +536,6 @@ export default function ConfigClient() {
                 value={s3Bucket}
                 onChange={(e) => handleInputChange('s3Bucket', e.target.value)}
                 placeholder={dict.placeholders.awsBucket || 'S3 Bucket名称'}
-                onBlur={handleInputBlur}
               />
             </FormGroup>
             
@@ -508,7 +546,6 @@ export default function ConfigClient() {
                 value={s3Region}
                 onChange={(e) => handleInputChange('s3Region', e.target.value)}
                 placeholder={dict.placeholders.awsRegion || 'us-east-1'}
-                onBlur={handleInputBlur}
               />
             </FormGroup>
           </div>
@@ -525,7 +562,6 @@ export default function ConfigClient() {
                 value={cosSecretId}
                 onChange={(e) => handleInputChange('cosSecretId', e.target.value)}
                 placeholder={dict.placeholders.tencentSecretId || '腾讯云SecretId'}
-                onBlur={handleInputBlur}
               />
             </FormGroup>
             <FormGroup label={dict.config.tencentSecretKey || 'SecretKey'} htmlFor="cosSecretKey">
@@ -535,7 +571,6 @@ export default function ConfigClient() {
                 value={cosSecretKey}
                 onChange={(e) => handleInputChange('cosSecretKey', e.target.value)}
                 placeholder={dict.placeholders.tencentSecretKey || '腾讯云SecretKey'}
-                onBlur={handleInputBlur}
               />
             </FormGroup>
             <FormGroup label={dict.config.tencentBucket || 'Bucket'} htmlFor="cosBucket">
@@ -545,7 +580,6 @@ export default function ConfigClient() {
                 value={cosBucket}
                 onChange={(e) => handleInputChange('cosBucket', e.target.value)}
                 placeholder={dict.placeholders.tencentBucket || 'cos-bucket-123456'}
-                onBlur={handleInputBlur}
               />
             </FormGroup>
             <FormGroup label={dict.config.tencentRegion || 'Region'} htmlFor="cosRegion">
@@ -555,7 +589,6 @@ export default function ConfigClient() {
                 value={cosRegion}
                 onChange={(e) => handleInputChange('cosRegion', e.target.value)}
                 placeholder={dict.placeholders.tencentRegion || 'ap-guangzhou'}
-                onBlur={handleInputBlur}
               />
             </FormGroup>
           </div>
@@ -572,7 +605,6 @@ export default function ConfigClient() {
                 value={ossAccessKey}
                 onChange={(e) => handleInputChange('ossAccessKey', e.target.value)}
                 placeholder={dict.placeholders.aliyunAccessKey || '阿里云AccessKey'}
-                onBlur={handleInputBlur}
               />
             </FormGroup>
              <FormGroup label={dict.config.aliyunSecretKey || 'SecretKey'} htmlFor="ossSecretKey">
@@ -582,7 +614,6 @@ export default function ConfigClient() {
                 value={ossSecretKey}
                 onChange={(e) => handleInputChange('ossSecretKey', e.target.value)}
                 placeholder={dict.placeholders.aliyunSecretKey || '阿里云SecretKey'}
-                onBlur={handleInputBlur}
               />
             </FormGroup>
              <FormGroup label={dict.config.aliyunBucket || 'Bucket'} htmlFor="ossBucket">
@@ -592,7 +623,6 @@ export default function ConfigClient() {
                 value={ossBucket}
                 onChange={(e) => handleInputChange('ossBucket', e.target.value)}
                 placeholder={dict.placeholders.aliyunBucket || 'oss-bucket'}
-                onBlur={handleInputBlur}
               />
             </FormGroup>
             <FormGroup label={dict.config.aliyunRegion || 'Region'} htmlFor="ossRegion">
@@ -602,7 +632,6 @@ export default function ConfigClient() {
                 value={ossRegion}
                 onChange={(e) => handleInputChange('ossRegion', e.target.value)}
                 placeholder={dict.placeholders.aliyunRegion || 'oss-cn-hangzhou'}
-                onBlur={handleInputBlur}
               />
             </FormGroup>
           </div>
@@ -619,7 +648,6 @@ export default function ConfigClient() {
                 value={qiniuAccessKey}
                 onChange={(e) => handleInputChange('qiniuAccessKey', e.target.value)}
                 placeholder={dict.placeholders.qiniuAccessKey || '七牛AccessKey'}
-                onBlur={handleInputBlur}
               />
             </FormGroup>
              <FormGroup label={dict.config.qiniuSecretKey || 'SecretKey'} htmlFor="qiniuSecretKey">
@@ -629,7 +657,6 @@ export default function ConfigClient() {
                 value={qiniuSecretKey}
                 onChange={(e) => handleInputChange('qiniuSecretKey', e.target.value)}
                 placeholder={dict.placeholders.qiniuSecretKey || '七牛SecretKey'}
-                onBlur={handleInputBlur}
               />
             </FormGroup>
             <FormGroup label={dict.config.qiniuBucket || 'Bucket'} htmlFor="qiniuBucket">
@@ -639,7 +666,6 @@ export default function ConfigClient() {
                 value={qiniuBucket}
                 onChange={(e) => handleInputChange('qiniuBucket', e.target.value)}
                 placeholder={dict.placeholders.qiniuBucket || '七牛Bucket'}
-                onBlur={handleInputBlur}
               />
             </FormGroup>
             <FormGroup label={dict.config.qiniuDomain || '域名'} htmlFor="qiniuDomain">
@@ -649,7 +675,6 @@ export default function ConfigClient() {
                 value={qiniuDomain}
                 onChange={(e) => handleInputChange('qiniuDomain', e.target.value)}
                 placeholder={dict.placeholders.qiniuDomain || 'https://example.qiniucdn.com'}
-                onBlur={handleInputBlur}
               />
             </FormGroup>
           </div>
@@ -667,7 +692,6 @@ export default function ConfigClient() {
                 value={customApiUrl}
                 onChange={(e) => handleInputChange('customApiUrl', e.target.value)}
                 placeholder={dict.placeholders.customApiUrl}
-                onBlur={handleInputBlur}
               />
             </FormGroup>
             
@@ -678,7 +702,6 @@ export default function ConfigClient() {
                 value={customApiKey}
                 onChange={(e) => handleInputChange('customApiKey', e.target.value)}
                 placeholder={dict.placeholders.customApiKey}
-                onBlur={handleInputBlur}
               />
             </FormGroup>
           </div>
@@ -693,6 +716,15 @@ export default function ConfigClient() {
     }
   };
   
+  // 组件卸载时清除计时器
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
     <main className="config-page p-4 md:p-6">
       <h1 className="text-2xl font-bold mb-6 text-center md:text-left">{dict.config.title}</h1>
@@ -725,7 +757,9 @@ export default function ConfigClient() {
         {/* Main content area */}
         <div className="config-content p-4 md:p-6 flex-1">
           {/* Render the form for the selected service */}
-          {renderConfigForm()}
+          <div key={selectedService}>
+            {renderConfigForm()}
+          </div>
           
           {/* Status messages - needs Tailwind styling */}
           {saveMessage && (
@@ -740,11 +774,12 @@ export default function ConfigClient() {
             </div>
           )}
           
-          {isSaving && saveMessage !== dict.buttons.saving && (
-            <div className="config-changed-indicator saving-indicator mt-2 text-sm text-gray-500 animate-pulse">
-              {dict.status.autoSaving}
-            </div>
-          )}
+          {/* 修改自动保存提示，使其在 configChanged 为 true 且计时器存在时显示 */}
+           {configChanged && saveTimeoutRef.current && !isSaving && (
+             <div className="config-changed-indicator saving-indicator mt-2 text-sm text-gray-500 animate-pulse">
+               {dict.status.pendingSave || '待保存...'}
+             </div>
+           )}
           
           {/* Action Button */}
           <div className="config-actions mt-6 border-t pt-4">

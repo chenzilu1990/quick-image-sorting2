@@ -74,7 +74,7 @@
     "autoSaving": "正在自动保存...",
     "configSaved": "配置已自动保存",
     "saveFailed": "保存失败，请重试",
-    "connectionSuccess": "✓ 连接成功：已连接到 ComfyUI {version}",
+    "connectionSuccess": "✓ 连接成功",
     "connectionFailed": "✗ 连接失败：{message}",
     "accessGranted": "成功获取目录\"{directory}\"的访问权限",
     "accessFailed": "获取目录访问权限失败",

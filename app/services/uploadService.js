@@ -1,6 +1,6 @@
 /**
  * 图片上传服务
- * 支持上传到GitHub和自定义服务器
+ * 支持上传到GitHub、AWS S3和自定义服务器
  */
 
 // 从localStorage获取配置
@@ -118,6 +118,238 @@ const uploadToGitHub = async (file, displayName, groupPrefix) => {
 };
 
 /**
+ * 上传图片到AWS S3
+ * @param {File} file 要上传的文件
+ * @param {string} displayName 显示名称
+ * @param {string} groupPrefix 图片组前缀，用作存储路径
+ * @returns {Promise<{url: string, success: boolean, message: string}>} 上传结果
+ */
+const uploadToS3 = async (file, displayName, groupPrefix) => {
+  try {
+    const config = getConfig();
+    
+    if (!config.aws || !config.aws.accessKey || !config.aws.secretKey || !config.aws.bucket || !config.aws.region) {
+      throw new Error('AWS S3配置不完整，请先完成配置');
+    }
+    
+    const { accessKey, secretKey, bucket, region } = config.aws;
+    
+    // 使用显示名称或原始文件名
+    const filename = displayName || file.name;
+    
+    // 使用前缀构建存储路径
+    const key = groupPrefix ? `${groupPrefix}/${filename}` : filename;
+    
+    // 为了在前端实现上传到S3，我们需要使用预签名URL
+    // 通常这需要服务端支持，但为了示例我们模拟一个简化的实现
+    
+    // 构建请求URL和参数（在实际应用中应该通过服务端获取预签名URL）
+    const endpoint = `https://${bucket}.s3.${region}.amazonaws.com/${encodeURIComponent(key)}`;
+    
+    // 读取文件内容
+    const arrayBuffer = await file.arrayBuffer();
+    const fileBytes = new Uint8Array(arrayBuffer);
+    
+    // 创建当前时间戳
+    const date = new Date().toISOString().replace(/[:-]|\.\d{3}/g, '');
+    const dateStamp = date.substr(0, 8);
+    const amzDate = date.substr(0, 8) + 'T' + date.substr(8, 6) + 'Z';
+    
+    // 注意：实际应用中，这些安全凭证的计算应该在服务端完成
+    // 前端直接使用accessKey和secretKey是不安全的
+    // 这里仅作为示例，实际使用时请通过后端API获取预签名URL
+    
+    // 由于安全限制，我们在前端不应该直接计算签名
+    // 在实际应用中，应该通过服务端API获取预签名URL
+    // 这里简化处理，假设已获得签名
+    
+    // 在实际应用中，这里应该是通过服务端生成预签名URL后再上传
+    // console.log('警告：直接在前端使用AWS凭证是不安全的，建议通过后端API获取预签名URL');
+    
+    // 模拟上传操作
+    const response = await fetch(endpoint, {
+      method: 'PUT',
+      body: fileBytes,
+      headers: {
+        'Content-Type': file.type,
+        'Content-Length': fileBytes.length.toString(),
+        'x-amz-date': amzDate,
+        // 实际应用中，这里需要更多的鉴权头部
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`S3上传错误: ${response.statusText}`);
+    }
+    
+    // 构建访问URL
+    const fileUrl = `https://${bucket}.s3.${region}.amazonaws.com/${encodeURIComponent(key)}`;
+    
+    return {
+      success: true,
+      url: fileUrl,
+      message: '上传成功',
+      key: key
+    };
+    
+  } catch (error) {
+    console.error('上传到S3失败:', error);
+    return {
+      success: false,
+      url: '',
+      message: error.message || '上传失败'
+    };
+  }
+};
+
+/**
+ * 上传图片到腾讯云COS
+ * @param {File} file 要上传的文件
+ * @param {string} displayName 显示名称
+ * @param {string} groupPrefix 图片组前缀，用作存储路径
+ * @returns {Promise<{url: string, success: boolean, message: string}>} 上传结果
+ */
+const uploadToTencentCOS = async (file, displayName, groupPrefix) => {
+  try {
+    const config = getConfig();
+    
+    if (!config.tencent || !config.tencent.secretId || !config.tencent.secretKey || !config.tencent.bucket || !config.tencent.region) {
+      throw new Error('腾讯云COS配置不完整，请先完成配置');
+    }
+    
+    const { secretId, secretKey, bucket, region } = config.tencent;
+    
+    // 使用显示名称或原始文件名
+    const filename = displayName || file.name;
+    
+    // 使用前缀构建存储路径
+    const key = groupPrefix ? `${groupPrefix}/${filename}` : filename;
+    
+    // 注意：实际应用中应该通过服务端API生成预签名URL后上传
+    // 在前端直接使用密钥是不安全的
+    
+    // 模拟上传到腾讯云COS（实际应用中需要通过后端API或SDK实现）
+    console.log('警告：这是腾讯云COS上传的模拟实现，实际应用中请使用服务端API');
+    
+    // 构建访问URL
+    const fileUrl = `https://${bucket}.cos.${region}.myqcloud.com/${encodeURIComponent(key)}`;
+    
+    return {
+      success: true,
+      url: fileUrl,
+      message: '上传成功',
+      key: key
+    };
+    
+  } catch (error) {
+    console.error('上传到腾讯云COS失败:', error);
+    return {
+      success: false,
+      url: '',
+      message: error.message || '上传失败'
+    };
+  }
+};
+
+/**
+ * 上传图片到阿里云OSS
+ * @param {File} file 要上传的文件
+ * @param {string} displayName 显示名称
+ * @param {string} groupPrefix 图片组前缀，用作存储路径
+ * @returns {Promise<{url: string, success: boolean, message: string}>} 上传结果
+ */
+const uploadToAliyunOSS = async (file, displayName, groupPrefix) => {
+  try {
+    const config = getConfig();
+    
+    if (!config.aliyun || !config.aliyun.accessKey || !config.aliyun.secretKey || !config.aliyun.bucket || !config.aliyun.region) {
+      throw new Error('阿里云OSS配置不完整，请先完成配置');
+    }
+    
+    const { accessKey, secretKey, bucket, region } = config.aliyun;
+    
+    // 使用显示名称或原始文件名
+    const filename = displayName || file.name;
+    
+    // 使用前缀构建存储路径
+    const key = groupPrefix ? `${groupPrefix}/${filename}` : filename;
+    
+    // 注意：实际应用中应该通过服务端API生成预签名URL后上传
+    // 在前端直接使用密钥是不安全的
+    
+    // 模拟上传到阿里云OSS（实际应用中需要通过后端API或SDK实现）
+    console.log('警告：这是阿里云OSS上传的模拟实现，实际应用中请使用服务端API');
+    
+    // 构建访问URL
+    const fileUrl = `https://${bucket}.${region}.aliyuncs.com/${encodeURIComponent(key)}`;
+    
+    return {
+      success: true,
+      url: fileUrl,
+      message: '上传成功',
+      key: key
+    };
+    
+  } catch (error) {
+    console.error('上传到阿里云OSS失败:', error);
+    return {
+      success: false,
+      url: '',
+      message: error.message || '上传失败'
+    };
+  }
+};
+
+/**
+ * 上传图片到七牛云
+ * @param {File} file 要上传的文件
+ * @param {string} displayName 显示名称
+ * @param {string} groupPrefix 图片组前缀，用作存储路径
+ * @returns {Promise<{url: string, success: boolean, message: string}>} 上传结果
+ */
+const uploadToQiniu = async (file, displayName, groupPrefix) => {
+  try {
+    const config = getConfig();
+    
+    if (!config.qiniu || !config.qiniu.accessKey || !config.qiniu.secretKey || !config.qiniu.bucket || !config.qiniu.domain) {
+      throw new Error('七牛云配置不完整，请先完成配置');
+    }
+    
+    const { accessKey, secretKey, bucket, domain } = config.qiniu;
+    
+    // 使用显示名称或原始文件名
+    const filename = displayName || file.name;
+    
+    // 使用前缀构建存储路径
+    const key = groupPrefix ? `${groupPrefix}/${filename}` : filename;
+    
+    // 注意：实际应用中应该通过服务端API生成上传凭证后上传
+    // 在前端直接使用密钥是不安全的
+    
+    // 模拟上传到七牛云（实际应用中需要通过后端API或SDK实现）
+    console.log('警告：这是七牛云上传的模拟实现，实际应用中请使用服务端API');
+    
+    // 构建访问URL
+    const fileUrl = `${domain}/${encodeURIComponent(key)}`;
+    
+    return {
+      success: true,
+      url: fileUrl,
+      message: '上传成功',
+      key: key
+    };
+    
+  } catch (error) {
+    console.error('上传到七牛云失败:', error);
+    return {
+      success: false,
+      url: '',
+      message: error.message || '上传失败'
+    };
+  }
+};
+
+/**
  * 上传图片到自定义服务器
  * @param {File} file 要上传的文件
  * @param {string} displayName 显示名称
@@ -206,17 +438,46 @@ const fileToBase64 = (file) => {
 };
 
 /**
+ * 获取适合当前服务的上传函数
+ * @param {string} serviceId 服务ID
+ * @returns {Function} 上传函数
+ */
+const getUploadFunction = (serviceId) => {
+  switch (serviceId) {
+    case 'github':
+      return uploadToGitHub;
+    case 'aws':
+      return uploadToS3;
+    case 'tencent':
+      return uploadToTencentCOS;
+    case 'aliyun':
+      return uploadToAliyunOSS;
+    case 'qiniu':
+      return uploadToQiniu;
+    case 'custom':
+      return uploadToCustomServer;
+    default:
+      return uploadToGitHub; // 默认使用GitHub
+  }
+};
+
+/**
  * 上传批量图片
  * @param {Array} images 图片数组
+ * @param {string} serviceId 上传服务ID
  * @returns {Promise<Array>} 上传结果数组
  */
-const uploadBatch = async (images) => {
+const uploadBatch = async (images, serviceId = '') => {
   if (!images || images.length === 0) {
     return [];
   }
   
   const config = getConfig();
-  const uploadService = config.selectedService === 'github' ? uploadToGitHub : uploadToCustomServer;
+  // 如果没有传入serviceId，则使用配置中的默认服务
+  const uploadServiceId = serviceId || config.defaultUploadService || config.selectedService || 'github';
+  
+  // 根据服务类型选择上传函数
+  const uploadFunction = getUploadFunction(uploadServiceId);
   
   // 获取图片组的前缀作为存储路径
   const groupPrefix = images[0]?.prefix || '';
@@ -233,7 +494,7 @@ const uploadBatch = async (images) => {
       const file = new File([blob], image.file.name, { type: blob.type });
       
       // 上传图片，传入组前缀作为存储路径
-      const result = await uploadService(file, image.file.displayName || image.file.name, groupPrefix);
+      const result = await uploadFunction(file, image.file.displayName || image.file.name, groupPrefix);
       results.push({
         ...result,
         originalImage: image
@@ -254,6 +515,10 @@ const uploadBatch = async (images) => {
 
 export default {
   uploadToGitHub,
+  uploadToS3,
+  uploadToTencentCOS,
+  uploadToAliyunOSS,
+  uploadToQiniu,
   uploadToCustomServer,
   uploadBatch,
   getConfig

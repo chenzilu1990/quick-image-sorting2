@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ImageFile } from '@/types';
@@ -35,9 +35,11 @@ interface ImageGroupViewerProps {
   hasComfyUIConfig: boolean;
   lang: Locale;
   onDownloadGroup: (images: ImageFile[]) => void;
-  onUploadGroup: (groupKey: string, images: ImageFile[]) => void;
+  onUploadGroup: (groupKey: string, images: ImageFile[], serviceId: string) => void;
   onOpenWorkflowModal: (image: ImageFile) => void;
   onImageError: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
+  availableServices: Array<{id: string, name: string}>;
+  defaultUploadService: string;
 }
 
 const ImageGroupViewer: React.FC<ImageGroupViewerProps> = ({
@@ -53,11 +55,26 @@ const ImageGroupViewer: React.FC<ImageGroupViewerProps> = ({
   onDownloadGroup,
   onUploadGroup,
   onOpenWorkflowModal,
-  onImageError
+  onImageError,
+  availableServices = [{ id: 'default', name: '默认' }],
+  defaultUploadService = 'default',
 }) => {
   const dict = useDictionary();
   const pathname = usePathname();
   
+  const [selectedServices, setSelectedServices] = useState<{[key: string]: string}>({});
+  
+  const getServiceForGroup = (groupKey: string) => {
+    return selectedServices[groupKey] || defaultUploadService;
+  };
+  
+  const handleServiceChange = (groupKey: string, serviceId: string) => {
+    setSelectedServices(prev => ({
+      ...prev,
+      [groupKey]: serviceId
+    }));
+  };
+
   return (
     <div className="renamed-images-section my-8 p-6 bg-orange-50 rounded-lg border-2 border-orange-300 shadow-md space-y-6">
       <h3 className="text-xl font-semibold text-center text-orange-600">{dict.home.renamedImagesTitle}</h3>
@@ -80,17 +97,34 @@ const ImageGroupViewer: React.FC<ImageGroupViewerProps> = ({
                 {isDownloading ? dict.status.downloading : dict.buttons.downloadGroup}
               </Button>
               
-              <Button 
-                variant="secondary"
-                size="sm"
-                onClick={() => onUploadGroup(groupKey, group.images)}
-                disabled={isUploading || !hasConfig}
-                title={!hasConfig ? dict.alerts.uploadConfig : ''}
-              >
-                {uploadResults[groupKey]?.status === 'uploading'
-                  ? dict.status.uploading
-                  : dict.buttons.uploadToCloud}
-              </Button>
+              <div className="flex items-center">
+                <select 
+                  value={getServiceForGroup(groupKey)}
+                  onChange={(e) => handleServiceChange(groupKey, e.target.value)}
+                  disabled={isUploading || !hasConfig}
+                  className="mr-2 p-1 text-sm border border-gray-300 rounded"
+                  title={dict.buttons.selectService || "选择上传服务"}
+                >
+                  {Array.isArray(availableServices) && availableServices.length > 0 
+                    ? availableServices.map(service => (
+                        <option key={service.id} value={service.id}>{service.name}</option>
+                      ))
+                    : <option value="default">默认</option>
+                  }
+                </select>
+                
+                <Button 
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => onUploadGroup(groupKey, group.images, getServiceForGroup(groupKey))}
+                  disabled={isUploading || !hasConfig}
+                  title={!hasConfig ? dict.alerts.uploadConfig : ''}
+                >
+                  {uploadResults[groupKey]?.status === 'uploading'
+                    ? dict.status.uploading
+                    : dict.buttons.uploadToCloud}
+                </Button>
+              </div>
             </div>
           </div>
           

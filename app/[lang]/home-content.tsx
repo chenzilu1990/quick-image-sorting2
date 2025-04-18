@@ -64,10 +64,9 @@ export default function HomeContent({ params }: { params: { lang: Locale } }) {
   const [isLoadingWorkflows, setIsLoadingWorkflows] = useState<boolean>(false);
   const [imagesLoaded, setImagesLoaded] = useState<boolean>(false); // 标记是否已加载图片
   
-
-
-
-
+  // 新增：可用上传服务和默认上传服务状态
+  const [availableServices, setAvailableServices] = useState<Array<{id: string, name: string}>>([]);
+  const [defaultUploadService, setDefaultUploadService] = useState<string>('github');
 
   // 获取用户当前语言
   const currentLocale = params.lang;
@@ -523,16 +522,6 @@ export default function HomeContent({ params }: { params: { lang: Locale } }) {
     }
   }, [renamedImages, prefix, dict]);
 
-  // 上传分组图片
-  const handleUploadAllGroups = useCallback(() => {
-    alert(dict.alerts.configUpload);
-  }, [dict]);
-
-  // 使用ComfyUI编辑图片
-  const handleEditWithComfyUI = useCallback(() => {
-    alert(dict.alerts.configComfyUI);
-  }, [dict]);
-
   // 打开工作流选择模态框
   const openWorkflowModal = useCallback((image: ImageFile) => {
     setCurrentEditingImage(image);
@@ -559,9 +548,71 @@ export default function HomeContent({ params }: { params: { lang: Locale } }) {
   }, [renamedImages, saveRenamedImagesToStorage]);
 
   // 上传图片组
-  const handleUploadGroup = useCallback((groupKey: string, groupImages: ImageFile[]) => {
-    alert(dict.alerts.configUpload);
-  }, [dict]);
+  const handleUploadGroup = useCallback((groupKey: string, groupImages: ImageFile[], serviceId: string) => {
+    if (!hasConfig) {
+      alert(dict.alerts.configUpload);
+      return;
+    }
+    
+    // 更新上传状态
+    setIsUploading(true);
+    setUploadResults(prev => ({
+      ...prev,
+      [groupKey]: { status: 'uploading' }
+    }));
+    
+    // 使用uploadService上传图片组
+    uploadService.uploadBatch(groupImages, serviceId)
+      .then(results => {
+        const allSuccess = results.every(r => r.success);
+        const anySuccess = results.some(r => r.success);
+        
+        // 根据上传结果设置状态
+        if (allSuccess) {
+          setUploadResults(prev => ({
+            ...prev,
+            [groupKey]: { 
+              status: 'success',
+              message: `成功上传到 ${availableServices.find(s => s.id === serviceId)?.name || serviceId}`,
+              results: results
+            }
+          }));
+        } else if (anySuccess) {
+          // 部分成功
+          setUploadResults(prev => ({
+            ...prev,
+            [groupKey]: { 
+              status: 'partial',
+              message: `部分图片上传成功 (${results.filter(r => r.success).length}/${results.length})`,
+              results: results
+            }
+          }));
+        } else {
+          // 全部失败
+          setUploadResults(prev => ({
+            ...prev,
+            [groupKey]: { 
+              status: 'error',
+              message: results[0]?.message || '上传失败',
+              results: results
+            }
+          }));
+        }
+      })
+      .catch(error => {
+        console.error('上传图片组出错:', error);
+        setUploadResults(prev => ({
+          ...prev,
+          [groupKey]: { 
+            status: 'error',
+            message: error.message || '上传过程中出错'
+          }
+        }));
+      })
+      .finally(() => {
+        setIsUploading(false);
+      });
+  }, [dict.alerts.configUpload, hasConfig, availableServices]);
 
   // 检查配置在组件挂载时
   useEffect(() => {
@@ -571,17 +622,83 @@ export default function HomeContent({ params }: { params: { lang: Locale } }) {
         const parsedConfig = JSON.parse(config);
         const selectedService = parsedConfig.selectedService;
         
-        if (
-          (selectedService === 'github' && 
-           parsedConfig.github && 
+        // 收集已配置的服务
+        const services: Array<{id: string, name: string}> = [];
+        let hasValidConfig = false;
+        
+        // 检查GitHub配置
+        if (parsedConfig.github && 
            parsedConfig.github.token && 
            parsedConfig.github.repo && 
-           parsedConfig.github.owner) ||
-          (selectedService === 'custom' && 
-           parsedConfig.customServer && 
-           parsedConfig.customServer.apiUrl)
-        ) {
-          setHasConfig(true);
+           parsedConfig.github.owner) {
+          services.push({ id: 'github', name: 'GitHub' });
+          if (selectedService === 'github') {
+            hasValidConfig = true;
+          }
+        }
+        
+        // 检查自定义服务器配置
+        if (parsedConfig.customServer && 
+           parsedConfig.customServer.apiUrl) {
+          services.push({ id: 'custom', name: dict.config?.customService || '自定义服务' });
+          if (selectedService === 'custom') {
+            hasValidConfig = true;
+          }
+        }
+        
+        // 检查AWS S3配置
+        if (parsedConfig.aws && 
+           parsedConfig.aws.accessKey && 
+           parsedConfig.aws.secretKey &&
+           parsedConfig.aws.bucket) {
+          services.push({ id: 'aws', name: 'AWS S3' });
+          if (selectedService === 'aws') {
+            hasValidConfig = true;
+          }
+        }
+        
+        // 检查腾讯云COS配置
+        if (parsedConfig.tencent && 
+           parsedConfig.tencent.secretId && 
+           parsedConfig.tencent.secretKey &&
+           parsedConfig.tencent.bucket) {
+          services.push({ id: 'tencent', name: dict.config?.tencentName || '腾讯云COS' });
+          if (selectedService === 'tencent') {
+            hasValidConfig = true;
+          }
+        }
+        
+        // 检查阿里云OSS配置
+        if (parsedConfig.aliyun && 
+           parsedConfig.aliyun.accessKey && 
+           parsedConfig.aliyun.secretKey &&
+           parsedConfig.aliyun.bucket) {
+          services.push({ id: 'aliyun', name: dict.config?.aliyunName || '阿里云OSS' });
+          if (selectedService === 'aliyun') {
+            hasValidConfig = true;
+          }
+        }
+        
+        // 检查七牛云配置
+        if (parsedConfig.qiniu && 
+           parsedConfig.qiniu.accessKey && 
+           parsedConfig.qiniu.secretKey &&
+           parsedConfig.qiniu.bucket) {
+          services.push({ id: 'qiniu', name: dict.config?.qiniuName || '七牛云' });
+          if (selectedService === 'qiniu') {
+            hasValidConfig = true;
+          }
+        }
+        
+        // 更新状态
+        setAvailableServices(services.length > 0 ? services : [{ id: 'default', name: '默认' }]);
+        setHasConfig(hasValidConfig);
+        
+        // 获取默认上传服务
+        if (parsedConfig.defaultUploadService && services.find(s => s.id === parsedConfig.defaultUploadService)) {
+          setDefaultUploadService(parsedConfig.defaultUploadService);
+        } else if (services.length > 0) {
+          setDefaultUploadService(services[0].id);
         }
       }
 
@@ -592,7 +709,7 @@ export default function HomeContent({ params }: { params: { lang: Locale } }) {
     } catch (error) {
       console.error('检查配置时出错:', error);
     }
-  }, []);
+  }, [dict.config]);
 
   // 创建数据结构处理辅助函数
   const createImageGroups = useCallback(() => {
@@ -677,7 +794,6 @@ export default function HomeContent({ params }: { params: { lang: Locale } }) {
       
       {renamedImages.length > 0 && (
         <div className="renamed-images-container">
-
           <ImageGroupViewer 
             groups={createImageGroups()}
             uploadResults={uploadResults}
@@ -692,6 +808,8 @@ export default function HomeContent({ params }: { params: { lang: Locale } }) {
             onOpenWorkflowModal={openWorkflowModal}
             onImageError={handleImageError}
             lang={currentLocale}
+            availableServices={availableServices}
+            defaultUploadService={defaultUploadService}
           />
           <RenamedImageActions 
             isDownloading={isDownloading}
