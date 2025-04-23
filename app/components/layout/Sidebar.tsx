@@ -7,7 +7,7 @@ import LanguageSwitcher from '@/components/layout/LanguageSwitcher';
 import { Locale } from '@/i18n/settings';
 import { useDictionary } from '@/components/hooks/client-dictionary';
 import clsx from 'clsx';
-import { Home, Settings, Cog, PanelLeftClose, PanelRightClose, Upload } from 'lucide-react';
+import { Home, Settings, Cog, PanelLeftClose, PanelRightClose } from 'lucide-react';
 
 export default function Sidebar({ lang }: { lang: Locale }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -50,16 +50,6 @@ export default function Sidebar({ lang }: { lang: Locale }) {
             <Home size={20} className={clsx(!isFunctionallyCollapsed && 'mr-3')} />
             <span className={clsx(isFunctionallyCollapsed && 'hidden')}>{dict.navigation.home}</span>
           </Link>
-          
-          <Link 
-            href={`/${lang}/upload`} 
-            className={clsx(navLinkBaseClasses, pathname.startsWith(`/${lang}/upload`) && navLinkActiveClasses)}
-            title={isFunctionallyCollapsed ? dict.navigation.imageUpload : ''}
-          >
-            <Upload size={20} className={clsx(!isFunctionallyCollapsed && 'mr-3')} />
-            <span className={clsx(isFunctionallyCollapsed && 'hidden')}>{dict.navigation.imageUpload}</span>
-          </Link>
-          
           <Link 
             href={`/${lang}/config`} 
             className={clsx(navLinkBaseClasses, pathname.startsWith(`/${lang}/config`) && !pathname.includes('comfyui') && navLinkActiveClasses)}
