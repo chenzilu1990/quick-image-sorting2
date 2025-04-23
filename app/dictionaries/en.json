@@ -4,9 +4,10 @@
     "about": "About",
     "uploadConfig": "Upload Config",
     "comfyUIConfig": "ComfyUI Config",
-    "sidebarTitle": "Image Quick Sort",
+    "sidebarTitle": "Image Sorter",
     "toggleSidebar": "Toggle Sidebar",
-    "language": "Language"
+    "language": "Language",
+    "imageUpload": "Image Upload"
   },
   "home": {
     "title": "Image Sorting and Renaming Tool",

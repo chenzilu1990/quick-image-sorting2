@@ -15,6 +15,7 @@ import {
   Users,
   Settings
 } from 'lucide-react';
+import UploadServiceGuide from '@/components/config/UploadServiceGuide';
 
 // 定义配置更新值的接口
 interface ConfigUpdateValues {
@@ -405,7 +406,68 @@ export default function ConfigClient() {
           
         case 'aws':
           // 测试AWS S3连接
-          setSaveMessage(dict.status.testNotImplemented || '测试功能未实现，请直接上传测试');
+          if (!s3AccessKey || !s3SecretKey || !s3Bucket || !s3Region) {
+            setSaveMessage(dict.errors.missingAwsFields || '请填写所有AWS S3配置字段');
+            return;
+          }
+          
+          try {
+            // 创建临时测试路由进行S3验证
+            const testEndpoint = '/api/test-s3-connection';
+            const testResponse = await fetch(testEndpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                accessKey: s3AccessKey,
+                secretKey: s3SecretKey,
+                bucket: s3Bucket,
+                region: s3Region
+              })
+            });
+            
+            const result = await testResponse.json();
+            
+            if (result.success) {
+              setSaveMessage(dict.status.connectionSuccess.replace('{version}', `(${result.message || 'S3连接成功'})`));
+            } else {
+              setSaveMessage(dict.status.connectionFailed.replace('{message}', result.message || '无法连接到S3服务'));
+            }
+          } catch (err) {
+            // 使用前端方法进行简单验证（不建议在生产环境中使用）
+            // 注意：这只是一个简单测试，最好使用服务器端验证
+            const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/g, '');
+            const date = timestamp.substring(0, 8);
+            
+            // 创建一个最小化的请求，只检查存储桶是否存在
+            const method = 'HEAD';
+            const host = `${s3Bucket}.s3.${s3Region}.amazonaws.com`;
+            const endpoint = `https://${host}/`;
+            
+            const headers = {
+              'Host': host,
+              'X-Amz-Date': timestamp,
+              'X-Amz-Content-Sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', // 空内容的SHA256
+            };
+            
+            try {
+              const testHeadResponse = await fetch(endpoint, {
+                method: method,
+                headers: headers,
+              });
+              
+              // 如果响应中包含S3特定的头部，则连接可能成功
+              // 注意：这种方法并不能完全确认权限，因为不包含完整的AWS签名
+              if (testHeadResponse.headers.get('x-amz-request-id')) {
+                setSaveMessage(dict.status.connectionSuccess.replace('{version}', '(基本连接成功，但未验证完整权限)'));
+              } else {
+                setSaveMessage(dict.status.connectionPartial || '存储桶可访问，但无法确认完整权限。请尝试直接上传测试。');
+              }
+            } catch (headErr) {
+              setSaveMessage(dict.status.connectionFailed.replace('{message}', '无法连接到S3存储桶，请检查区域和存储桶名称'));
+            }
+          }
           break;
           
         case 'tencent':
@@ -497,25 +559,28 @@ export default function ConfigClient() {
             
             <div className="path-info p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
               <p className="info-text">
-                <span className="info-icon">ℹ️</span> 
-                {dict.config.githubPathInfo}
+                {dict.config.githubPathInfo || '图片将存储在您的仓库中，默认路径为：'}
+                <code className="bg-blue-100 px-1 py-0.5 rounded">images/图片名称.png</code>
               </p>
             </div>
+            
+            {/* 添加GitHub图床指南 */}
+            <UploadServiceGuide serviceId="github" />
           </div>
         );
         
       case 'aws':
         return (
           <div className="aws-config">
-            <h2 className="text-xl font-semibold mb-4">{dict.config.awsConfig || 'AWS S3配置'}</h2>
+            <h2 className="text-xl font-semibold mb-4">{dict.config.awsConfig || 'AWS S3 配置'}</h2>
             
             <FormGroup label={dict.config.awsAccessKey || 'Access Key'} htmlFor="s3AccessKey">
               <Input
                 id="s3AccessKey"
-                type="password"
+                type="text"
                 value={s3AccessKey}
                 onChange={(e) => handleInputChange('s3AccessKey', e.target.value)}
-                placeholder={dict.placeholders.awsAccessKey || 'AWS Access Key'}
+                placeholder={dict.placeholders.awsAccessKey || '输入您的 AWS Access Key'}
               />
             </FormGroup>
             
@@ -525,7 +590,7 @@ export default function ConfigClient() {
                 type="password"
                 value={s3SecretKey}
                 onChange={(e) => handleInputChange('s3SecretKey', e.target.value)}
-                placeholder={dict.placeholders.awsSecretKey || 'AWS Secret Key'}
+                placeholder={dict.placeholders.awsSecretKey || '输入您的 AWS Secret Key'}
               />
             </FormGroup>
             
@@ -535,7 +600,7 @@ export default function ConfigClient() {
                 type="text"
                 value={s3Bucket}
                 onChange={(e) => handleInputChange('s3Bucket', e.target.value)}
-                placeholder={dict.placeholders.awsBucket || 'S3 Bucket名称'}
+                placeholder={dict.placeholders.awsBucket || '输入您的 S3 Bucket 名称'}
               />
             </FormGroup>
             
@@ -545,95 +610,159 @@ export default function ConfigClient() {
                 type="text"
                 value={s3Region}
                 onChange={(e) => handleInputChange('s3Region', e.target.value)}
-                placeholder={dict.placeholders.awsRegion || 'us-east-1'}
+                placeholder={dict.placeholders.awsRegion || '输入 AWS 区域代码，如 us-east-1'}
               />
             </FormGroup>
+            
+            {/* S3测试连接提示 */}
+            <div className="test-connection-info mt-4 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-800">
+              <h3 className="font-medium mb-2">测试连接说明</h3>
+              <p>完成以上配置后，点击底部的"测试连接"按钮来验证您的AWS S3凭证是否正确配置。测试将检查：</p>
+              <ul className="list-disc list-inside mt-2 space-y-1 ml-2">
+                <li>您的Access Key和Secret Key是否有效</li>
+                <li>存储桶是否存在且可访问</li>
+                <li>您是否拥有必要的权限</li>
+              </ul>
+              <p className="mt-2">如果测试成功，表示您可以正常使用S3上传图片。如果测试失败，请检查错误信息并相应调整配置。</p>
+            </div>
+            
+            {/* CORS配置提示 */}
+            <div className="cors-info mt-4 mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-800">
+              <h3 className="font-medium mb-2">重要：CORS配置</h3>
+              <p>如果您遇到以下错误：</p>
+              <div className="bg-gray-100 p-2 my-2 rounded text-xs overflow-x-auto">
+                Access to fetch at 'https://your-bucket.s3.region.amazonaws.com/...' has been blocked by CORS policy
+              </div>
+              <p>您需要为S3存储桶配置CORS策略：</p>
+              <ol className="list-decimal list-inside mt-2 space-y-1 ml-2">
+                <li>登录AWS管理控制台，进入S3服务</li>
+                <li>选择您的存储桶，点击"权限"选项卡</li>
+                <li>找到"跨源资源共享(CORS)"部分，点击"编辑"</li>
+                <li>添加以下JSON配置：</li>
+              </ol>
+              <pre className="bg-gray-100 p-2 mt-2 rounded text-xs overflow-x-auto">
+{`[
+  {
+    "AllowedHeaders": ["*"],
+    "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
+    "AllowedOrigins": ["http://localhost:3000", "https://您的网站域名.com"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3000
+  }
+]`}
+              </pre>
+              <p className="mt-2">作为临时解决方案，您也可以使用我们提供的代理服务，将图片URL从：</p>
+              <div className="bg-gray-100 p-2 my-2 rounded text-xs overflow-x-auto">
+                https://your-bucket.s3.region.amazonaws.com/image.jpg
+              </div>
+              <p>修改为：</p>
+              <div className="bg-gray-100 p-2 my-2 rounded text-xs overflow-x-auto">
+                /api/s3-proxy?url=https://your-bucket.s3.region.amazonaws.com/image.jpg
+              </div>
+            </div>
+            
+            {/* 添加AWS S3指南 */}
+            <UploadServiceGuide serviceId="aws" />
           </div>
         );
         
       case 'tencent':
         return (
           <div className="tencent-config">
-            <h2 className="text-xl font-semibold mb-4">{dict.config.tencentConfig || '腾讯云COS配置'}</h2>
+            <h2 className="text-xl font-semibold mb-4">{dict.config.tencentConfig || '腾讯云 COS 配置'}</h2>
+            
             <FormGroup label={dict.config.tencentSecretId || 'SecretId'} htmlFor="cosSecretId">
               <Input
                 id="cosSecretId"
-                type="password"
+                type="text"
                 value={cosSecretId}
                 onChange={(e) => handleInputChange('cosSecretId', e.target.value)}
-                placeholder={dict.placeholders.tencentSecretId || '腾讯云SecretId'}
+                placeholder={dict.placeholders.tencentSecretId || '输入您的腾讯云 SecretId'}
               />
             </FormGroup>
+            
             <FormGroup label={dict.config.tencentSecretKey || 'SecretKey'} htmlFor="cosSecretKey">
               <Input
                 id="cosSecretKey"
                 type="password"
                 value={cosSecretKey}
                 onChange={(e) => handleInputChange('cosSecretKey', e.target.value)}
-                placeholder={dict.placeholders.tencentSecretKey || '腾讯云SecretKey'}
+                placeholder={dict.placeholders.tencentSecretKey || '输入您的腾讯云 SecretKey'}
               />
             </FormGroup>
+            
             <FormGroup label={dict.config.tencentBucket || 'Bucket'} htmlFor="cosBucket">
               <Input
                 id="cosBucket"
                 type="text"
                 value={cosBucket}
                 onChange={(e) => handleInputChange('cosBucket', e.target.value)}
-                placeholder={dict.placeholders.tencentBucket || 'cos-bucket-123456'}
+                placeholder={dict.placeholders.tencentBucket || '输入您的 COS Bucket 名称'}
               />
             </FormGroup>
+            
             <FormGroup label={dict.config.tencentRegion || 'Region'} htmlFor="cosRegion">
               <Input
                 id="cosRegion"
                 type="text"
                 value={cosRegion}
                 onChange={(e) => handleInputChange('cosRegion', e.target.value)}
-                placeholder={dict.placeholders.tencentRegion || 'ap-guangzhou'}
+                placeholder={dict.placeholders.tencentRegion || '输入 COS 区域代码，如 ap-beijing'}
               />
             </FormGroup>
+            
+            {/* 添加腾讯云COS指南 */}
+            <UploadServiceGuide serviceId="tencent" />
           </div>
         );
         
       case 'aliyun':
         return (
           <div className="aliyun-config">
-            <h2 className="text-xl font-semibold mb-4">{dict.config.aliyunConfig || '阿里云OSS配置'}</h2>
+            <h2 className="text-xl font-semibold mb-4">{dict.config.aliyunConfig || '阿里云 OSS 配置'}</h2>
+            
             <FormGroup label={dict.config.aliyunAccessKey || 'AccessKey'} htmlFor="ossAccessKey">
               <Input
                 id="ossAccessKey"
-                type="password"
+                type="text"
                 value={ossAccessKey}
                 onChange={(e) => handleInputChange('ossAccessKey', e.target.value)}
-                placeholder={dict.placeholders.aliyunAccessKey || '阿里云AccessKey'}
+                placeholder={dict.placeholders.aliyunAccessKey || '输入您的阿里云 AccessKey'}
               />
             </FormGroup>
-             <FormGroup label={dict.config.aliyunSecretKey || 'SecretKey'} htmlFor="ossSecretKey">
+            
+            <FormGroup label={dict.config.aliyunSecretKey || 'SecretKey'} htmlFor="ossSecretKey">
               <Input
                 id="ossSecretKey"
                 type="password"
                 value={ossSecretKey}
                 onChange={(e) => handleInputChange('ossSecretKey', e.target.value)}
-                placeholder={dict.placeholders.aliyunSecretKey || '阿里云SecretKey'}
+                placeholder={dict.placeholders.aliyunSecretKey || '输入您的阿里云 SecretKey'}
               />
             </FormGroup>
-             <FormGroup label={dict.config.aliyunBucket || 'Bucket'} htmlFor="ossBucket">
+            
+            <FormGroup label={dict.config.aliyunBucket || 'Bucket'} htmlFor="ossBucket">
               <Input
                 id="ossBucket"
                 type="text"
                 value={ossBucket}
                 onChange={(e) => handleInputChange('ossBucket', e.target.value)}
-                placeholder={dict.placeholders.aliyunBucket || 'oss-bucket'}
+                placeholder={dict.placeholders.aliyunBucket || '输入您的 OSS Bucket 名称'}
               />
             </FormGroup>
+            
             <FormGroup label={dict.config.aliyunRegion || 'Region'} htmlFor="ossRegion">
               <Input
                 id="ossRegion"
                 type="text"
                 value={ossRegion}
                 onChange={(e) => handleInputChange('ossRegion', e.target.value)}
-                placeholder={dict.placeholders.aliyunRegion || 'oss-cn-hangzhou'}
+                placeholder={dict.placeholders.aliyunRegion || '输入 OSS 区域代码，如 oss-cn-hangzhou'}
               />
             </FormGroup>
+            
+            {/* 添加阿里云OSS指南 */}
+            <UploadServiceGuide serviceId="aliyun" />
           </div>
         );
         
@@ -641,69 +770,87 @@ export default function ConfigClient() {
         return (
           <div className="qiniu-config">
             <h2 className="text-xl font-semibold mb-4">{dict.config.qiniuConfig || '七牛云配置'}</h2>
+            
             <FormGroup label={dict.config.qiniuAccessKey || 'AccessKey'} htmlFor="qiniuAccessKey">
               <Input
                 id="qiniuAccessKey"
-                type="password"
+                type="text"
                 value={qiniuAccessKey}
                 onChange={(e) => handleInputChange('qiniuAccessKey', e.target.value)}
-                placeholder={dict.placeholders.qiniuAccessKey || '七牛AccessKey'}
+                placeholder={dict.placeholders.qiniuAccessKey || '输入您的七牛云 AccessKey'}
               />
             </FormGroup>
-             <FormGroup label={dict.config.qiniuSecretKey || 'SecretKey'} htmlFor="qiniuSecretKey">
+            
+            <FormGroup label={dict.config.qiniuSecretKey || 'SecretKey'} htmlFor="qiniuSecretKey">
               <Input
                 id="qiniuSecretKey"
                 type="password"
                 value={qiniuSecretKey}
                 onChange={(e) => handleInputChange('qiniuSecretKey', e.target.value)}
-                placeholder={dict.placeholders.qiniuSecretKey || '七牛SecretKey'}
+                placeholder={dict.placeholders.qiniuSecretKey || '输入您的七牛云 SecretKey'}
               />
             </FormGroup>
+            
             <FormGroup label={dict.config.qiniuBucket || 'Bucket'} htmlFor="qiniuBucket">
               <Input
                 id="qiniuBucket"
                 type="text"
                 value={qiniuBucket}
                 onChange={(e) => handleInputChange('qiniuBucket', e.target.value)}
-                placeholder={dict.placeholders.qiniuBucket || '七牛Bucket'}
+                placeholder={dict.placeholders.qiniuBucket || '输入您的七牛云存储空间名称'}
               />
             </FormGroup>
+            
             <FormGroup label={dict.config.qiniuDomain || '域名'} htmlFor="qiniuDomain">
               <Input
                 id="qiniuDomain"
                 type="text"
                 value={qiniuDomain}
                 onChange={(e) => handleInputChange('qiniuDomain', e.target.value)}
-                placeholder={dict.placeholders.qiniuDomain || 'https://example.qiniucdn.com'}
+                placeholder={dict.placeholders.qiniuDomain || '输入您的七牛云空间绑定的域名，包含http(s)://'}
               />
             </FormGroup>
+            
+            {/* 添加七牛云指南 */}
+            <UploadServiceGuide serviceId="qiniu" />
           </div>
         );
         
       case 'custom':
         return (
-          <div className="custom-server-config">
-            <h2 className="text-xl font-semibold mb-4">{dict.config.customConfig}</h2>
+          <div className="custom-config">
+            <h2 className="text-xl font-semibold mb-4">{dict.config.customConfig || '自定义服务器配置'}</h2>
             
-            <FormGroup label={dict.config.apiUrl} htmlFor="customApiUrl" helpText={dict.config.apiUrlHelp}>
+            <FormGroup 
+              label={dict.config.customApiUrl || 'API地址'} 
+              htmlFor="customApiUrl"
+              helpText={dict.config.customApiUrlHelp || '您自定义的图片上传API地址'}
+            >
               <Input
                 id="customApiUrl"
                 type="text"
                 value={customApiUrl}
                 onChange={(e) => handleInputChange('customApiUrl', e.target.value)}
-                placeholder={dict.placeholders.customApiUrl}
+                placeholder={dict.placeholders.customApiUrl || '输入您的API地址，如 https://api.example.com/upload'}
               />
             </FormGroup>
             
-            <FormGroup label={dict.config.apiKey} htmlFor="customApiKey" helpText={dict.config.apiKeyHelp}>
+            <FormGroup 
+              label={dict.config.customApiKey || 'API密钥'} 
+              htmlFor="customApiKey"
+              helpText={dict.config.customApiKeyHelp || '如果您的API需要认证，请提供密钥（可选）'}
+            >
               <Input
                 id="customApiKey"
                 type="password"
                 value={customApiKey}
                 onChange={(e) => handleInputChange('customApiKey', e.target.value)}
-                placeholder={dict.placeholders.customApiKey}
+                placeholder={dict.placeholders.customApiKey || '可选：输入API认证密钥'}
               />
             </FormGroup>
+            
+            {/* 添加自定义服务器指南 */}
+            <UploadServiceGuide serviceId="custom" />
           </div>
         );
         
@@ -711,6 +858,9 @@ export default function ConfigClient() {
         return (
           <div className="empty-config p-4 text-gray-500">
             <p>{dict.config.selectService || '请选择图床服务'}</p>
+            
+            {/* 添加默认指南 */}
+            <UploadServiceGuide serviceId="default" />
           </div>
         );
     }

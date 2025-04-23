@@ -23,11 +23,21 @@ import type { ImageFile, Workflow } from '@/types';
 import { RenameMode } from '@/types';
 import { Locale } from '@/i18n/settings';
 
+// 首先定义上传服务返回的单个结果类型
+interface UploadServiceResult {
+  success: boolean;
+  url?: string;
+  originalImage?: ImageFile;
+  message?: string;
+  key?: string;
+}
+
 // 上传结果类型定义
 interface UploadResult {
   status: 'uploading' | 'success' | 'error' | 'partial';
   message?: string;
-  results?: Array<{success: boolean}>;
+  results?: UploadServiceResult[];
+  urls?: Array<{name: string, url: string}>;
 }
 
 // 上传结果集合类型
@@ -563,9 +573,17 @@ export default function HomeContent({ params }: { params: { lang: Locale } }) {
     
     // 使用uploadService上传图片组
     uploadService.uploadBatch(groupImages, serviceId)
-      .then(results => {
+      .then((results: UploadServiceResult[]) => {
         const allSuccess = results.every(r => r.success);
         const anySuccess = results.some(r => r.success);
+        
+        // 安全地构建URL数组，确保每个URL都是字符串
+        const successUrlArray = results
+          .filter(r => r.success && r.url)
+          .map(r => ({
+            name: r.originalImage ? (r.originalImage.file.displayName || r.originalImage.file.name) : '未命名',
+            url: r.url || ''
+          }));
         
         // 根据上传结果设置状态
         if (allSuccess) {
@@ -574,7 +592,8 @@ export default function HomeContent({ params }: { params: { lang: Locale } }) {
             [groupKey]: { 
               status: 'success',
               message: `成功上传到 ${availableServices.find(s => s.id === serviceId)?.name || serviceId}`,
-              results: results
+              results,
+              urls: successUrlArray
             }
           }));
         } else if (anySuccess) {
@@ -584,7 +603,8 @@ export default function HomeContent({ params }: { params: { lang: Locale } }) {
             [groupKey]: { 
               status: 'partial',
               message: `部分图片上传成功 (${results.filter(r => r.success).length}/${results.length})`,
-              results: results
+              results,
+              urls: successUrlArray
             }
           }));
         } else {
@@ -594,7 +614,7 @@ export default function HomeContent({ params }: { params: { lang: Locale } }) {
             [groupKey]: { 
               status: 'error',
               message: results[0]?.message || '上传失败',
-              results: results
+              results
             }
           }));
         }

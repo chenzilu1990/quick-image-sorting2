@@ -6,7 +6,8 @@
     "comfyUIConfig": "ComfyUI配置",
     "sidebarTitle": "图片快速排序",
     "toggleSidebar": "切换侧边栏",
-    "language": "语言"
+    "language": "语言",
+    "imageUpload": "图片上传"
   },
   "home": {
     "title": "图片快速排序与重命名工具",
