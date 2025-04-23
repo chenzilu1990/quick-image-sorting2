@@ -84,9 +84,5 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// 设置请求体大小限制（可选）
-export const config = {
-  api: {
-    bodyParser: false, // Next.js不会解析请求体，我们自己处理
-  },
-}; 
+// 替换为新的配置:
+export const dynamic = 'force-dynamic'; // 使路由始终为动态的 
