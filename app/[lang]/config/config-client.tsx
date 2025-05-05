@@ -156,6 +156,11 @@ export default function ConfigClient() {
   // 用于 debounce 的 Ref
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
+  // Refs to hold the latest values for the cleanup function
+  const configChangedRef = useRef(configChanged);
+  // Need to define saveConfig first, so initialize ref later or update in effect
+  const saveConfigRef = useRef<typeof saveConfig>(() => {}); // Placeholder function
+  
   // 从localStorage加载配置
   useEffect(() => {
     try {
@@ -295,6 +300,12 @@ export default function ConfigClient() {
       customApiUrl, customApiKey, dict, isSaving // 添加 isSaving
   ]);
 
+  // Update refs with latest values after saveConfig is defined and potentially memoized
+  useEffect(() => {
+    configChangedRef.current = configChanged;
+    saveConfigRef.current = saveConfig;
+  }); // Runs on every render to capture latest state and function
+
   // Debounced 保存函数
   const debouncedSave = useCallback(() => {
     // 清除之前的计时器
@@ -365,14 +376,6 @@ export default function ConfigClient() {
     
     setConfigChanged(true); // 标记有未保存的更改
     debouncedSave(); // 触发 debounced 保存
-  };
-  
-  const handleInputBlur = () => {
-    // 在这里处理失去焦点的逻辑
-    // 例如，可以在这里触发保存操作
-    if (configChanged) {
-      saveConfig();
-    }
   };
   
   // 测试连接
@@ -866,14 +869,21 @@ export default function ConfigClient() {
     }
   };
   
-  // 组件卸载时清除计时器
+  // Effect for handling unmount and saving pending changes
   useEffect(() => {
+    // The return function is the cleanup function
     return () => {
+      // Clear any pending debounced save timer
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
+      // Check if there are unsaved changes using the ref's current value
+      if (configChangedRef.current) {
+        console.log('Component unmounting with unsaved changes. Saving...'); // For debugging
+        saveConfigRef.current(); // Call the latest save function via ref
+      }
     };
-  }, []);
+  }, []); // Empty dependency array ensures this runs only on mount and unmount
 
   return (
     <main className="config-page p-4 md:p-6">
